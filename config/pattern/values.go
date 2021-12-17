@@ -1,14 +1,12 @@
 package pattern
 
 import (
-	"errors"
 	"fmt"
+	"github.com/frawleyskid/ipfs-bib/archive"
 	"github.com/nickng/bibtex"
 	"net/url"
 	"strings"
 )
-
-var ErrInvalidReferenceUrl = errors.New("invalid URL from bibtex file")
 
 type EntryNameValues struct {
 	Doi     *string
@@ -74,7 +72,7 @@ func NewProxySchemaValues(entry bibtex.BibEntry) (*ProxySchemaValues, error) {
 	if rawUrl := entryField(entry, "url"); rawUrl != nil {
 		entryUrl, err := url.Parse(*rawUrl)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %v", ErrInvalidReferenceUrl, err)
+			return nil, fmt.Errorf("%w: %v", archive.ErrInvalidReferenceUrl, err)
 		}
 
 		urlPath := strings.TrimPrefix(entryUrl.Path, "/")
