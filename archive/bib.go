@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	DOI_PREFIX = "doi:"
-	DOI_URL    = "https://doi.org/"
+	DoiPrefix = "doi:"
+	DoiUrl    = "https://doi.org/"
 )
 
 var (
@@ -20,12 +20,12 @@ var (
 
 func doiToRawUrl(doi string) (rawUrl string) {
 	switch {
-	case strings.HasPrefix(doi, DOI_PREFIX):
-		return DOI_URL + strings.TrimPrefix(doi, DOI_PREFIX)
-	case strings.HasPrefix(doi, DOI_URL):
+	case strings.HasPrefix(doi, DoiPrefix):
+		return DoiUrl + strings.TrimPrefix(doi, DoiPrefix)
+	case strings.HasPrefix(doi, DoiUrl):
 		return doi
 	default:
-		return DOI_URL + doi
+		return DoiUrl + doi
 	}
 }
 
