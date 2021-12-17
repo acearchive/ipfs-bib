@@ -27,7 +27,12 @@ func (p Parser) Parse(pattern Pattern) (string, error) {
 	result := string(pattern)
 	offset := 0
 
-	for matchRange := parserRegex.FindStringIndex(result[offset:]); matchRange != nil; {
+	for {
+		matchRange := parserRegex.FindStringIndex(result[offset:])
+		if matchRange == nil {
+			break
+		}
+
 		start, end := matchRange[0]+offset, matchRange[1]+offset
 		match := result[start:end]
 
@@ -40,11 +45,11 @@ func (p Parser) Parse(pattern Pattern) (string, error) {
 		variable := Var(match[1])
 		value, ok := p.variables[variable]
 		if !ok {
-			return "", fmt.Errorf("%w: %v", ErrInvalidPatternVar, variable)
+			return "", fmt.Errorf("%w: %s", ErrInvalidPatternVar, string(variable))
 		}
 
 		result = result[:start] + value + result[end:]
-		offset += end + len(value) - 2
+		offset = end + len(value) - 2
 	}
 
 	return result, nil
