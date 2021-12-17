@@ -7,23 +7,7 @@ import (
 	"github.com/ipfs/go-merkledag"
 	"github.com/ipld/go-car/v2/blockstore"
 	"io"
-	"net/http"
-	"net/url"
 )
-
-const ContentTypeHeader = "Content-Type"
-
-func Download(url *url.URL, handlerFactory HandlerFactory) (io.ReadCloser, error) {
-	response, err := http.Get(url.String())
-	if err != nil {
-		return nil, err
-	}
-
-	mediaType := response.Header.Get(ContentTypeHeader)
-	handler := handlerFactory.Handler(mediaType)
-
-	return handler.Handle(response.Body)
-}
 
 func AddToNode(node shell.Shell, pin bool, content io.ReadCloser) (contentId cid.Cid, err error) {
 	defer func() {
