@@ -3,7 +3,9 @@ package archive
 import (
 	"errors"
 	"fmt"
+	"github.com/ipfs/go-cid"
 	"github.com/nickng/bibtex"
+	"io"
 	"net/url"
 	"strings"
 )
@@ -46,4 +48,15 @@ func UrlFromBibEntry(entry bibtex.BibEntry) (*url.URL, error) {
 	}
 
 	return entryUrl, nil
+}
+
+type BibSource struct {
+	Content       io.ReadCloser
+	DirectoryName string
+	FileName      string
+}
+
+type BibSourceId struct {
+	ContentCid   cid.Cid
+	DirectoryCid cid.Cid
 }
