@@ -1,0 +1,64 @@
+[ipfs]
+# The address of the API server for your IPFS node.
+api = "http://127.0.0.1:5001"
+
+# Generate URLs using a public gateway. If this is false, ipfs:// URLs will be
+# generated instead.
+use-gateway = true
+
+# The public gateway to use for generating URLs.
+gateway = "dweb.link"
+
+[bib]
+# A list of patterns to use to generate the file names of the sources in IPFS.
+# If one pattern fails because the necessary information isn't available in the
+# bibtex entry, the next pattern is used.
+# %d - The DOI of the entry
+# %t - The title of the entry
+# %y - The year of publication
+# %a - The authors of the entry
+# %i - The bibtex entry ID
+# %% - A literal %
+name-patterns = [
+    "%d",
+    "%i",
+]
+
+# A command which accepts a bibtex entry as stdin and writes the file name for
+# the source to stdout. This option supersedes `name-patterns`.
+# name-command = "file-name.sh"
+
+# A list of handlers that can be used to overwrite the default behavior for
+# downloading sources.
+# [[handlers]]
+# The list of media types (MIME types) to use this handler for.
+# media-types = [
+#     "text/html",
+# ]
+
+# A command which accepts the response payload from the entry URL or DOI to
+# stdin and writes the content to be archived to the IPFS node to stdout.
+# command = "snapshot.sh"
+
+# A list of proxy rules which can be used to resolve source URLs or DOIs.
+# [[proxies]]
+# A list of proxy schemes to try in order. Each scheme is a URL which accepts
+# the following variables:
+# %d - The DOI of the entry, excluding the doi: or https://doi.org/ prefix (e.g. 10.1038/nphys1170)
+# %h - The hostname of source URL (e.g. example.com)
+# %p - The path of the source URL, excluding the leading slash (e.g. about/index.html)
+# %% - A literal %
+# schemes = [
+#     "example.com/%d",
+#     "%h.example.com/%p",
+# ]
+
+# Use this proxy rule for entries with a DOI. This supersedes `hostnames`.
+# doi = true
+
+# This proxy rule is only applied when the entry has a URL with one of these
+# hostnames. If this list is empty, then the proxy rule applies to all entries.
+# hostnames = [
+#     "example.org",
+#     "research.example.com",
+# ]

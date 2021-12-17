@@ -1,32 +1,50 @@
 package config
 
-import "github.com/frawleyskid/ipfs-bib/config/pattern"
+import (
+	"github.com/frawleyskid/ipfs-bib/config/pattern"
+	"github.com/pelletier/go-toml"
+	"os"
+)
 
 type Ipfs struct {
-	Api        string `json:"api"`
-	UseGateway bool   `json:"use-gateway"`
-	Gateway    string `json:"gateway"`
+	Api        string `toml:"api" default:"http://127.0.0.1:5001"`
+	UseGateway bool   `toml:"use-gateway" default:"true"`
+	Gateway    string `toml:"gateway" default:"dweb.link"`
 }
 
 type Bib struct {
-	NamePatterns []pattern.Pattern `json:"name-patterns"`
-	NameCommand  *string           `json:"name-command"`
+	NamePatterns []pattern.Pattern `toml:"name-patterns"`
+	NameCommand  *string           `toml:"name-command"`
 }
 
 type Handler struct {
-	MediaTypes []string `json:"media-types"`
-	Command    string   `json:"command"`
+	MediaTypes []string `toml:"media-types"`
+	Command    string   `toml:"command"`
 }
 
 type Proxy struct {
-	Schemes   []pattern.Pattern `json:"schemes"`
-	Doi       bool              `json:"doi"`
-	Hostnames []string          `json:"hostnames"`
+	Schemes   []pattern.Pattern `toml:"schemes"`
+	Doi       bool              `toml:"doi"`
+	Hostnames []string          `toml:"hostnames"`
 }
 
 type Config struct {
-	Ipfs     Ipfs      `json:"ipfs"`
-	Bib      Bib       `json:"bib"`
-	Handlers []Handler `json:"handlers"`
-	Proxies  []Proxy   `json:"proxies"`
+	Ipfs     Ipfs      `toml:"ipfs"`
+	Bib      Bib       `toml:"bib"`
+	Handlers []Handler `toml:"handlers"`
+	Proxies  []Proxy   `toml:"proxies"`
+}
+
+func FromToml(file string) (*Config, error) {
+	configBytes, err := os.ReadFile(file)
+	if err != nil {
+		return nil, err
+	}
+
+	config := Config{}
+	if err := toml.Unmarshal(configBytes, &config); err != nil {
+		return nil, err
+	}
+
+	return &config, nil
 }
