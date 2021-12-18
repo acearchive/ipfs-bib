@@ -10,6 +10,7 @@ type Ipfs struct {
 	Api        string `toml:"api" default:"http://127.0.0.1:5001"`
 	UseGateway bool   `toml:"use-gateway" default:"true"`
 	Gateway    string `toml:"gateway" default:"dweb.link"`
+	CarVersion string `toml:"car-version" default:"1"`
 }
 
 type Bib struct {

@@ -9,6 +9,9 @@
     # The public gateway to use for generating URLs.
     gateway = "dweb.link"
 
+    # The CAR version to use. Supported values are "1" and "2".
+    car-version = "1"
+
 [bib]
     # A list of patterns to use to generate the file names of the sources in
     # IPFS. If one pattern fails because the necessary information isn't
