@@ -6,7 +6,6 @@ import (
 	ipld "github.com/ipfs/go-ipld-format"
 	dag "github.com/ipfs/go-merkledag"
 	unixfs "github.com/ipfs/go-unixfs/io"
-	"io"
 )
 
 type SourceStore struct {
@@ -43,16 +42,7 @@ func (s *SourceStore) Write(ctx context.Context) (cid.Cid, error) {
 }
 
 func (s *SourceStore) AddSource(ctx context.Context, source *BibSource) (id *BibSourceId, err error) {
-	defer func() {
-		err = source.Content.Close()
-	}()
-
-	sourceData, err := io.ReadAll(source.Content)
-	if err != nil {
-		return nil, err
-	}
-
-	contentNode := dag.NewRawNode(sourceData)
+	contentNode := dag.NewRawNode(source.Content)
 	if err := s.service.Add(ctx, contentNode); err != nil {
 		return nil, err
 	}

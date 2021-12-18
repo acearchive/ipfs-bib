@@ -24,7 +24,10 @@ require (
 
 require (
 	github.com/alecthomas/units v0.0.0-20210927113745-59d0afb8317a // indirect
+	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
+	github.com/go-shiori/dom v0.0.0-20201011032054-d6b74a54fe52 // indirect
+	github.com/go-shiori/obelisk v0.0.0-20201115143556-8de0d40b0a9b // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
@@ -59,10 +62,13 @@ require (
 	github.com/multiformats/go-varint v0.0.6 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/polydawn/refmt v0.0.0-20201211092308-30ac6d18308e // indirect
+	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/smartystreets/assertions v1.0.0 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/tdewolff/parse/v2 v2.5.5 // indirect
 	github.com/whyrusleeping/cbor-gen v0.0.0-20200123233031-1cdf64d27158 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect

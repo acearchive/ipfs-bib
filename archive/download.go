@@ -1,64 +1,51 @@
 package archive
 
 import (
-	"io"
-	"mime"
+	"context"
+	"github.com/go-shiori/obelisk"
 	"net/http"
 	"net/url"
+	"time"
 )
 
-const (
-	ContentTypeHeader        = "Content-Type"
-	ContentDispositionHeader = "Content-Disposition"
-	DefaultFilename          = "source"
-)
+const RequestTimeout = "30s"
 
-func ParseMediaType(header http.Header) (medaType, filename string, err error) {
-	mediaType, _, err := mime.ParseMediaType(header.Get(ContentTypeHeader))
-	if err != nil {
-		return "", "", err
-	}
-
-	contentDisposition, dispositionParams, err := mime.ParseMediaType(header.Get(ContentDispositionHeader))
-	if err != nil {
-		return "", "", err
-	}
-
-	if dispositionFilename, ok := dispositionParams["filename"]; contentDisposition == "attachment" && ok {
-		filename = dispositionFilename
-	} else {
-		extensions, err := mime.ExtensionsByType(mediaType)
-		if err != nil {
-			return "", "", err
-		}
-
-		if extensions == nil {
-			filename = DefaultFilename
-		} else {
-			filename = DefaultFilename + extensions[0]
-		}
-	}
-
-	return mediaType, filename, err
+type Downloader struct {
+	archiver obelisk.Archiver
 }
 
-func Download(url *url.URL, handlerFactory HandlerFactory) (content io.ReadCloser, filename string, err error) {
+func NewDownloader() *Downloader {
+	timeout, err := time.ParseDuration(RequestTimeout)
+	if err != nil {
+		panic(err)
+	}
+
+	return &Downloader{obelisk.Archiver{
+		UserAgent:      obelisk.DefaultUserAgent,
+		RequestTimeout: timeout,
+	}}
+}
+
+func (a *Downloader) Download(ctx context.Context, url *url.URL) (content []byte, info *MediaInfo, err error) {
 	response, err := http.Get(url.String())
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
-	mediaType, filename, err := ParseMediaType(response.Header)
+	info, err = ParseMediaType(response.Header)
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
-	handler := handlerFactory.Handler(mediaType)
-
-	content, err = handler.Handle(response.Body)
+	content, _, err = a.archiver.Archive(ctx, obelisk.Request{
+		Input: response.Body,
+		URL:   url.String(),
+	})
 	if err != nil {
-		return nil, "", err
+		return nil, nil, err
 	}
 
-	return content, filename, err
+	err = response.Body.Close()
+
+	return content, info, err
 }

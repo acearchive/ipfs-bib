@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/ipfs/go-cid"
 	"github.com/nickng/bibtex"
-	"io"
 	"net/url"
 	"strings"
 )
@@ -51,7 +50,7 @@ func UrlFromBibEntry(entry bibtex.BibEntry) (*url.URL, error) {
 }
 
 type BibSource struct {
-	Content       io.ReadCloser
+	Content       []byte
 	DirectoryName string
 	FileName      string
 }
