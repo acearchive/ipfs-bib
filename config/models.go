@@ -18,11 +18,6 @@ type Bib struct {
 	NameCommand  *string           `toml:"name-command"`
 }
 
-type Handler struct {
-	MediaTypes []string `toml:"media-types"`
-	Command    string   `toml:"command"`
-}
-
 type Proxy struct {
 	Schemes   []pattern.Pattern `toml:"schemes"`
 	Doi       bool              `toml:"doi"`
@@ -30,10 +25,9 @@ type Proxy struct {
 }
 
 type Config struct {
-	Ipfs     Ipfs      `toml:"ipfs"`
-	Bib      Bib       `toml:"bib"`
-	Handlers []Handler `toml:"handlers"`
-	Proxies  []Proxy   `toml:"proxies"`
+	Ipfs    Ipfs    `toml:"ipfs"`
+	Bib     Bib     `toml:"bib"`
+	Proxies []Proxy `toml:"proxies"`
 }
 
 func FromToml(file string) (*Config, error) {

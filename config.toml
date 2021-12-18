@@ -31,18 +31,6 @@
     # for the source to stdout. This option supersedes `name-patterns`.
     #name-command = "file-name.sh"
 
-# A list of handlers that can be used to overwrite the default behavior for
-# downloading sources.
-#[[handlers]]
-    # The list of media types (MIME types) to use this handler for.
-    #media-types = [
-    #    "text/html",
-    #]
-
-    # A command which accepts the response payload from the entry URL or DOI to
-    # stdin and writes the content to be archived to the IPFS node to stdout.
-    #command = "snapshot.sh"
-
 # A list of proxy rules which can be used to resolve source URLs or DOIs.
 #[[proxies]]
     # A list of proxy schemes to try in order. Each scheme is a URL which
