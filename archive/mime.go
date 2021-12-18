@@ -8,6 +8,8 @@ type ContentDisposition string
 
 const (
 	ContentDispositionHeader = "Content-Disposition"
+	ContentTypeHeader        = "Content-Type"
+	UserAgentHeader          = "User-Agent"
 	DefaultFileName          = "source"
 	DefaultMediaType         = "application/octet-stream"
 )
@@ -25,12 +27,7 @@ func defaultFileName(mediaType string) (string, error) {
 	}
 }
 
-func GetFileName(disposition, contentType string) (string, error) {
-	mediaType, _, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		mediaType = DefaultMediaType
-	}
-
+func InferFileName(disposition, mediaType string) (string, error) {
 	if disposition == "" {
 		return defaultFileName(mediaType)
 	} else {

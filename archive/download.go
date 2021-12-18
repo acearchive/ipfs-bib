@@ -3,50 +3,69 @@ package archive
 import (
 	"context"
 	"github.com/go-shiori/obelisk"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
 )
 
-const RequestTimeout = "30s"
+const DefaultTimeout time.Duration = 1000 * 1000 * 1000 * 15
 
-type Downloader struct {
-	archiver *obelisk.Archiver
+var DefaultUserAgent = obelisk.DefaultUserAgent
+
+type DownloadClient struct {
+	httpClient http.Client
 }
 
-func NewDownloader() Downloader {
-	timeout, err := time.ParseDuration(RequestTimeout)
+func NewDownloadClient() *DownloadClient {
+	return &DownloadClient{
+		httpClient: http.Client{
+			Timeout: DefaultTimeout,
+		},
+	}
+}
+
+func (c *DownloadClient) request(method string, url *url.URL) (*HttpResponse, error) {
+	request, err := http.NewRequest(method, url.String(), nil)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
-	archiver := obelisk.Archiver{
-		UserAgent:      obelisk.DefaultUserAgent,
-		RequestTimeout: timeout,
+	request.Header.Set(UserAgentHeader, DefaultUserAgent)
+
+	response, err := c.httpClient.Do(request)
+	if err != nil {
+		return nil, err
 	}
 
-	archiver.Validate()
+	content, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	return Downloader{&archiver}
+	if err := response.Body.Close(); err != nil {
+		return nil, err
+	}
+
+	return &HttpResponse{
+		Url:    *url,
+		Body:   content,
+		Header: response.Header,
+	}, nil
 }
 
-func (a Downloader) Download(ctx context.Context, url *url.URL) (content []byte, filename string, err error) {
-	// TODO: Don't perform two GET requests
-	response, err := http.Get(url.String())
+func (c *DownloadClient) Download(ctx context.Context, url *url.URL) (content *SourceContent, filename string, err error) {
+	response, err := c.request("GET", url)
 	if err != nil {
 		return nil, "", err
 	}
 
-	content, contentType, err := a.archiver.Archive(ctx, obelisk.Request{
-		URL: url.String(),
-	})
+	content, err = DefaultHandler.Handle(ctx, response)
 	if err != nil {
 		return nil, "", err
 	}
 
-	disposition := response.Header.Get(ContentDispositionHeader)
-
-	filename, err = GetFileName(disposition, contentType)
+	filename, err = InferFileName(response.ContentDisposition(), content.MediaType)
 	if err != nil {
 		return nil, "", err
 	}
