@@ -2,84 +2,47 @@ package archive
 
 import (
 	"mime"
-	"net/http"
-	"net/url"
-	"path"
 )
 
 type ContentDisposition string
 
 const (
-	ContentTypeHeader        = "Content-Type"
 	ContentDispositionHeader = "Content-Disposition"
+	DefaultFileName          = "source"
 	DefaultMediaType         = "application/octet-stream"
 )
 
-type MediaInfo struct {
-	MediaType string
-	Filename  string
-}
+func defaultFileName(mediaType string) (string, error) {
+	extensions, err := mime.ExtensionsByType(mediaType)
+	if err != nil {
+		return "", err
+	}
 
-func fileNameFromUrl(url *url.URL) string {
-	return path.Base(url.Path)
-}
-
-func parseMediaType(header http.Header) (string, error) {
-	var (
-		mediaType string
-		err       error
-	)
-
-	contentTypeHeader := header.Get(ContentTypeHeader)
-
-	if contentTypeHeader == "" {
-		mediaType = DefaultMediaType
+	if extensions == nil {
+		return DefaultFileName, nil
 	} else {
-		mediaType, _, err = mime.ParseMediaType(header.Get(ContentTypeHeader))
+		return DefaultFileName + extensions[0], nil
+	}
+}
+
+func GetFileName(disposition, contentType string) (string, error) {
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err != nil {
+		mediaType = DefaultMediaType
+	}
+
+	if disposition == "" {
+		return defaultFileName(mediaType)
+	} else {
+		contentDisposition, dispositionParams, err := mime.ParseMediaType(disposition)
 		if err != nil {
 			return "", err
 		}
-	}
-
-	return mediaType, err
-}
-
-func ParseMediaInfo(url *url.URL, header http.Header) (*MediaInfo, error) {
-	mediaType, err := parseMediaType(header)
-	if err != nil {
-		return nil, err
-	}
-
-	var filename string
-
-	dispositionHeader := header.Get(ContentDispositionHeader)
-
-	if dispositionHeader == "" {
-		filename = fileNameFromUrl(url)
-	} else {
-		contentDisposition, dispositionParams, err := mime.ParseMediaType(header.Get(ContentDispositionHeader))
-		if err != nil {
-			return nil, err
-		}
 
 		if dispositionFilename, ok := dispositionParams["filename"]; contentDisposition == "attachment" && ok {
-			filename = dispositionFilename
+			return dispositionFilename, nil
 		} else {
-			extensions, err := mime.ExtensionsByType(mediaType)
-			if err != nil {
-				return nil, err
-			}
-
-			if extensions == nil {
-				filename = fileNameFromUrl(url)
-			} else {
-				filename = fileNameFromUrl(url) + extensions[0]
-			}
+			return defaultFileName(mediaType)
 		}
 	}
-
-	return &MediaInfo{
-		MediaType: mediaType,
-		Filename:  filename,
-	}, nil
 }

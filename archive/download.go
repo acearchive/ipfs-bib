@@ -11,41 +11,45 @@ import (
 const RequestTimeout = "30s"
 
 type Downloader struct {
-	archiver obelisk.Archiver
+	archiver *obelisk.Archiver
 }
 
-func NewDownloader() *Downloader {
+func NewDownloader() Downloader {
 	timeout, err := time.ParseDuration(RequestTimeout)
 	if err != nil {
 		panic(err)
 	}
 
-	return &Downloader{obelisk.Archiver{
+	archiver := obelisk.Archiver{
 		UserAgent:      obelisk.DefaultUserAgent,
 		RequestTimeout: timeout,
-	}}
+	}
+
+	archiver.Validate()
+
+	return Downloader{&archiver}
 }
 
-func (a *Downloader) Download(ctx context.Context, url *url.URL) (content []byte, info *MediaInfo, err error) {
+func (a Downloader) Download(ctx context.Context, url *url.URL) (content []byte, filename string, err error) {
+	// TODO: Don't perform two GET requests
 	response, err := http.Get(url.String())
 	if err != nil {
-		return nil, nil, err
+		return nil, "", err
 	}
 
-	info, err = ParseMediaInfo(url, response.Header)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	content, _, err = a.archiver.Archive(ctx, obelisk.Request{
-		Input: response.Body,
-		URL:   url.String(),
+	content, contentType, err := a.archiver.Archive(ctx, obelisk.Request{
+		URL: url.String(),
 	})
 	if err != nil {
-		return nil, nil, err
+		return nil, "", err
 	}
 
-	err = response.Body.Close()
+	disposition := response.Header.Get(ContentDispositionHeader)
 
-	return content, info, err
+	filename, err = GetFileName(disposition, contentType)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return content, filename, err
 }
