@@ -32,7 +32,7 @@ func (a *Downloader) Download(ctx context.Context, url *url.URL) (content []byte
 		return nil, nil, err
 	}
 
-	info, err = ParseMediaType(response.Header)
+	info, err = ParseMediaInfo(url, response.Header)
 	if err != nil {
 		return nil, nil, err
 	}
