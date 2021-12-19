@@ -13,23 +13,14 @@
     car-version = "1"
 
 [archive]
-    # A list of patterns to use to generate the directory names for each source
-    # in IPFS. If one pattern fails because the necessary information isn't
-    # available in the bibtex entry, the next pattern is used.
-    # %d - The DOI of the entry
-    # %t - The title of the entry
-    # %y - The year of publication
-    # %a - The authors of the entry
-    # %i - The bibtex entry ID
-    # %% - A literal %
-    #name-patterns = [
-    #    "%d",
-    #    "%i",
-    #]
-
-    # A command which accepts a bibtex entry as stdin and writes the directory
-    # name for the source to stdout. This option supersedes `name-patterns`.
-    #name-command = "file-name.sh"
+    # A golang `text/template` template which is passed the contents of the
+    # bibtex entry and returns the name of the source directory. Functions
+    # provided by the sprig library are available in the template. The
+    # following field are available in the template:
+    # .Key - The bibtex entry ID
+    # .Type - The bibtex entry type (e.g. "article")
+    # .Fields - A map of fields that appear in the bibtex entry
+    name-template = "{{ coalesce (get .Fields \"doi\") .Key }}"
 
     # The media types (MIME types) of content that the tool will not attempt to
     # archive.
@@ -58,15 +49,16 @@
 
 # A list of proxy rules which can be used to resolve source URLs or DOIs.
 #[[proxies]]
-    # A list of proxy schemes to try in order. Each scheme is a URL which
-    # accepts the following variables:
-    # %d - The DOI of the entry, excluding the doi: or https://doi.org/ prefix (e.g. 10.1038/nphys1170)
-    # %h - The hostname of source URL (e.g. example.com)
-    # %p - The path of the source URL, excluding the leading slash (e.g. about/index.html)
-    # %% - A literal %
+    # A list of proxy schemes to try in order. Each scheme is a golang
+    # `text/template` template which returns the proxied URL. Functions
+    # provided by the sprig library are available in the template. The
+    # following field are available in the template:
+    # .Doi - The DOI of the entry, excluding the doi: or https://doi.org/ prefix (e.g. 10.1038/nphys1170)
+    # .Hostname - The hostname of source URL (e.g. example.com)
+    # .Path - The path of the source URL, excluding the leading slash (e.g. about/index.html)
     #schemes = [
-    #    "example.com/%d",
-    #    "%h.example.com/%p",
+    #    "example.com/{{ .Doi }}",
+    #    "{{ .Hostname }}.example.com/{{ .Path }}",
     #]
 
     # Use this proxy rule for entries with a DOI. This supersedes `hostnames`.

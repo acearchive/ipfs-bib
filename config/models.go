@@ -1,7 +1,6 @@
 package config
 
 import (
-	"github.com/frawleyskid/ipfs-bib/config/pattern"
 	"github.com/pelletier/go-toml"
 	"os"
 )
@@ -14,9 +13,8 @@ type Ipfs struct {
 }
 
 type Archive struct {
-	NamePatterns  []pattern.Pattern `toml:"name-patterns"`
-	NameCommand   *string           `toml:"name-command"`
-	ExcludedTypes []string          `toml:"excluded-types"`
+	NameTemplate  string   `toml:"name-template" default:"{{ coalesce (get .Fields \"doi\") .Key }}"`
+	ExcludedTypes []string `toml:"excluded-types"`
 }
 
 type Embed struct {
@@ -35,9 +33,9 @@ type Handler struct {
 }
 
 type Proxy struct {
-	Schemes   []pattern.Pattern `toml:"schemes"`
-	Doi       bool              `toml:"doi"`
-	Hostnames []string          `toml:"hostnames"`
+	Schemes   []string `toml:"schemes"`
+	Doi       bool     `toml:"doi"`
+	Hostnames []string `toml:"hostnames"`
 }
 
 type Config struct {
