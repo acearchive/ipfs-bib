@@ -12,9 +12,9 @@
     # The CAR version to use. Supported values are "1" and "2".
     car-version = "1"
 
-[bib]
-    # A list of patterns to use to generate the file names of the sources in
-    # IPFS. If one pattern fails because the necessary information isn't
+[archive]
+    # A list of patterns to use to generate the directory names for each source
+    # in IPFS. If one pattern fails because the necessary information isn't
     # available in the bibtex entry, the next pattern is used.
     # %d - The DOI of the entry
     # %t - The title of the entry
@@ -27,9 +27,39 @@
     #    "%i",
     #]
 
-    # A command which accepts a bibtex entry as stdin and writes the file name
-    # for the source to stdout. This option supersedes `name-patterns`.
+    # A command which accepts a bibtex entry as stdin and writes the directory
+    # name for the source to stdout. This option supersedes `name-patterns`.
     #name-command = "file-name.sh"
+
+    # The media types (MIME types) of content that the tool will not attempt to
+    # archive.
+    #excluded-types = [
+    #    "text/html",
+    #]
+
+# A list of handlers which can be used to customize how certain media types are
+# archived. This could be used, for example, to archive web pages as HTML or
+# WARC files.
+#[[handlers]]
+    # The media types (MIME types) that this handler will be used for.
+    #media-types = [
+    #    "text/html",
+    #]
+
+    # The command that will be executed which writes the content to be archived
+    # to stdout. This is a pattern which accepts the following variables:
+    # %u - The URL of the source content.
+    # %o - An output file to write the content to if the command doesn't
+    # support writing to stdout.
+    # %m - The media type (MIME type) of the source content.
+    #command = "archive.sh --url %u --output %o"
+
+    # Whether to pass the downloaded source content to the stdin of the
+    # specified command.
+    #use-stdin = false
+
+    # The media type (MIME type) of the content returned by the command.
+    #output-type = "application/warc"
 
 # A list of proxy rules which can be used to resolve source URLs or DOIs.
 #[[proxies]]

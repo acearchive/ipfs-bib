@@ -13,9 +13,17 @@ type Ipfs struct {
 	CarVersion string `toml:"car-version" default:"1"`
 }
 
-type Bib struct {
-	NamePatterns []pattern.Pattern `toml:"name-patterns"`
-	NameCommand  *string           `toml:"name-command"`
+type Archive struct {
+	NamePatterns  []pattern.Pattern `toml:"name-patterns"`
+	NameCommand   *string           `toml:"name-command"`
+	ExcludedTypes []string          `toml:"excluded-types"`
+}
+
+type Handler struct {
+	MediaTypes []string `toml:"media-types"`
+	Command    string   `toml:"command"`
+	UseStdin   bool     `toml:"use-stdin"`
+	OutputType string   `toml:"output-type"`
 }
 
 type Proxy struct {
@@ -25,9 +33,10 @@ type Proxy struct {
 }
 
 type Config struct {
-	Ipfs    Ipfs    `toml:"ipfs"`
-	Bib     Bib     `toml:"bib"`
-	Proxies []Proxy `toml:"proxies"`
+	Ipfs     Ipfs      `toml:"ipfs"`
+	Archive  Archive   `toml:"bib"`
+	Handlers []Handler `toml:"handlers"`
+	Proxies  []Proxy   `toml:"proxies"`
 }
 
 func FromToml(file string) (*Config, error) {
