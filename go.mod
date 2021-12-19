@@ -3,6 +3,7 @@ module github.com/frawleyskid/ipfs-bib
 go 1.17
 
 require (
+	github.com/go-shiori/obelisk v0.0.0-20201115143556-8de0d40b0a9b
 	github.com/ipfs/go-block-format v0.0.3
 	github.com/ipfs/go-blockservice v0.2.1
 	github.com/ipfs/go-cid v0.1.0
@@ -20,6 +21,7 @@ require (
 	github.com/onsi/gomega v1.17.0
 	github.com/pelletier/go-toml v1.9.4
 	github.com/spf13/cobra v1.3.0
+	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f
 )
 
 require (
@@ -27,7 +29,6 @@ require (
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-shiori/dom v0.0.0-20201011032054-d6b74a54fe52 // indirect
-	github.com/go-shiori/obelisk v0.0.0-20201115143556-8de0d40b0a9b // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.2.0 // indirect
 	github.com/gopherjs/gopherjs v0.0.0-20190430165422-3e4dfb77656c // indirect
@@ -75,7 +76,6 @@ require (
 	go.uber.org/zap v1.17.0 // indirect
 	golang.org/x/crypto v0.0.0-20210817164053-32db794688a5 // indirect
 	golang.org/x/exp v0.0.0-20210615023648-acb5c1269671 // indirect
-	golang.org/x/net v0.0.0-20211216030914-fe4d6282115f // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 	golang.org/x/sys v0.0.0-20211205182925-97ca703d548d // indirect
 	golang.org/x/text v0.3.7 // indirect

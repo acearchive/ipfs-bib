@@ -3,7 +3,6 @@ package archive
 import (
 	"bytes"
 	"context"
-	"github.com/go-shiori/obelisk"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"io"
@@ -14,7 +13,6 @@ import (
 
 var DefaultHandler = MultiHandler{
 	NewEmbeddedPdfHandler(),
-	NewSnapshotHandler(),
 	&PassthroughHandler{},
 }
 
@@ -52,44 +50,6 @@ func (s *PassthroughHandler) Handle(_ context.Context, response *HttpResponse) (
 	return &SourceContent{
 		Content:   response.Body,
 		MediaType: response.MediaType(),
-	}, nil
-}
-
-type SnapshotHandler struct {
-	archiver *obelisk.Archiver
-}
-
-func NewSnapshotHandler() *SnapshotHandler {
-	archiver := obelisk.Archiver{
-		UserAgent: obelisk.DefaultUserAgent,
-	}
-
-	archiver.Validate()
-
-	return &SnapshotHandler{&archiver}
-}
-
-func (s *SnapshotHandler) Handle(ctx context.Context, response *HttpResponse) (*SourceContent, error) {
-	if response.MediaType() != "text/html" {
-		return nil, nil
-	}
-
-	content, contentType, err := s.archiver.Archive(ctx, obelisk.Request{
-		URL:   response.Url.String(),
-		Input: bytes.NewReader(response.Body),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	mediaType, _, err := mime.ParseMediaType(contentType)
-	if err != nil {
-		return nil, err
-	}
-
-	return &SourceContent{
-		Content:   content,
-		MediaType: mediaType,
 	}, nil
 }
 
