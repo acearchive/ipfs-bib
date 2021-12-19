@@ -17,7 +17,7 @@ func NewMonolithHandler(cfg *config.MonolithHandler) DownloadHandler {
 		return &NoOpHandler{}
 	}
 
-	args := []string{"--output", "-"}
+	var args []string
 
 	switch {
 	case cfg.AllowInsecure:
@@ -60,7 +60,12 @@ func (s *MonolithHandler) Handle(_ context.Context, response *HttpResponse) (*So
 		return nil, nil
 	}
 
-	command := exec.Command(s.path, s.args...)
+	args := make([]string, len(s.args))
+	copy(args, s.args)
+
+	args = append(args, "--base-url", response.Url.String(), "-")
+
+	command := exec.Command(s.path, args...)
 	command.Stdin = bytes.NewReader(response.Body)
 
 	stdout, err := command.Output()

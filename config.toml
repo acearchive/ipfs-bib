@@ -8,8 +8,8 @@
 
     # The public gateway to use for generating URLs.
     gateway = "dweb.link"
-
     # The CAR version to use. Supported values are "1" and "2".
+
     car-version = "1"
 
 [archive]
@@ -17,6 +17,7 @@
     # bibtex entry and returns the name of the source directory. Functions
     # provided by the sprig library are available in the template. The
     # following fields are available in the template:
+    #
     # .Key - The bibtex entry ID
     # .Type - The bibtex entry type (e.g. "article")
     # .Fields - A map of fields that appear in the bibtex entry
@@ -46,7 +47,7 @@
     # The path to the monolith binary.
     path = "monolith"
 
-    Allow invalid x.509 (TLS) certificates.
+    # Allow invalid x.509 (TLS) certificates.
     allow-insecure = false
 
     # Include audio sources.
@@ -81,29 +82,31 @@
     # evaluates to an empty string, it is ignored. Functions provided by the
     # sprig library are available in the template. The following fields are
     # available in the template:
+    #
     # .Doi - The DOI of the entry, excluding the doi: or https://doi.org/ prefix (e.g. 10.1038/nphys1170)
     # .Url.Host - The hostname of source URL (e.g. example.com)
     # .Url.Path - The path of the source URL, excluding the leading slash (e.g. about/index.html)
     # .Url.Directory - The directory path of the source URL, excluding the leading slash (e.g. about/)
     # .Url.Filename - The file name of the source URL (e.g. index.html)
-    # If either `.Doi` or `.Url` don't exist in the bibtex entry, they will be
-    # nil.
+    #
+    # If the bibtex entry has a URL but not a DOI, the `.Doi` field will be
+    # nil. If the bibtex entry has a DOI but not a URL, the `.Url` field will
+    # be populated by following an https://doi.org/ link.
     #schemes = [
     #    "{{ if not (empty .Doi) }}example.com/{{ .Doi }}{{ end }}",
-    #    "{{ if not (empty .Url) }}{{ .Url.Hostname }}.example.com/{{ .Url.Path }}{{ end }}",
+    #    "{{ .Url.Hostname }}.example.com/{{ .Url.Path }}",
     #]
 
-    # The entry URL is only passed to the template when it has one of these
-    # hostnames. Otherwise, the `.Url` field will be nil. If this list is
-    # empty, then the entry URL is always passed to the template unless its
-    # hostname is in `exclude-hostnames`.
+    # Only use this proxy rule when the source is located at one of these
+    # hostnames.  If this list is empty, the proxy will be used for all hosts
+    # not excluded by `exclude-hostnames`.
     #include-hostnames = [
     #    "example.org",
     #    "research.example.com",
     #]
 
-    # The entry URL is not passed to the template when it has one of these
-    # hostnames. In this case, the `.Url` field will be nil.
+    # Don't use this proxy rule if the source is located at one of these
+    # hostnames.
     #exclude-hostnames = [
     #    "example.org",
     #    "research.example.com",

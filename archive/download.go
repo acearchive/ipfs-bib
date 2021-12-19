@@ -23,8 +23,16 @@ func NewDownloadClient() *DownloadClient {
 	}
 }
 
-func (c *DownloadClient) request(method string, url *url.URL) (*handlers.HttpResponse, error) {
-	request, err := http.NewRequest(method, url.String(), nil)
+func (c *DownloadClient) request(method string, requestUrl *url.URL) (*handlers.HttpResponse, error) {
+	redirectedUrl := requestUrl
+
+	c.httpClient.CheckRedirect = func(request *http.Request, _ []*http.Request) error {
+		redirectedUrl = request.URL
+
+		return nil
+	}
+
+	request, err := http.NewRequest(method, requestUrl.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +52,7 @@ func (c *DownloadClient) request(method string, url *url.URL) (*handlers.HttpRes
 	}
 
 	return &handlers.HttpResponse{
-		Url:    *url,
+		Url:    *redirectedUrl,
 		Body:   content,
 		Header: response.Header,
 	}, nil
