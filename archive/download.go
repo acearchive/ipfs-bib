@@ -2,7 +2,6 @@ package archive
 
 import (
 	"context"
-	"github.com/go-shiori/obelisk"
 	"github.com/frawleyskid/ipfs-bib/handlers"
 	"io"
 	"net/http"
@@ -10,12 +9,7 @@ import (
 	"time"
 )
 
-const (
-	UserAgentHeader               = "User-Agent"
-	DefaultTimeout  time.Duration = 1000 * 1000 * 1000 * 15
-)
-
-var DefaultUserAgent = obelisk.DefaultUserAgent
+const DefaultTimeout time.Duration = 1000 * 1000 * 1000 * 15
 
 type DownloadClient struct {
 	httpClient http.Client
@@ -34,8 +28,6 @@ func (c *DownloadClient) request(method string, url *url.URL) (*handlers.HttpRes
 	if err != nil {
 		return nil, err
 	}
-
-	request.Header.Set(UserAgentHeader, DefaultUserAgent)
 
 	response, err := c.httpClient.Do(request)
 	if err != nil {
@@ -58,13 +50,13 @@ func (c *DownloadClient) request(method string, url *url.URL) (*handlers.HttpRes
 	}, nil
 }
 
-func (c *DownloadClient) Download(ctx context.Context, url *url.URL) (content *handlers.SourceContent, filename string, err error) {
+func (c *DownloadClient) Download(ctx context.Context, url *url.URL, handler handlers.DownloadHandler) (content *handlers.SourceContent, filename string, err error) {
 	response, err := c.request("GET", url)
 	if err != nil {
 		return nil, "", err
 	}
 
-	content, err = handlers.DefaultHandler.Handle(ctx, response)
+	content, err = handler.Handle(ctx, response)
 	if err != nil {
 		return nil, "", err
 	}

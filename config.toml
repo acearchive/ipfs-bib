@@ -16,7 +16,7 @@
     # A golang `text/template` template which is passed the contents of the
     # bibtex entry and returns the name of the source directory. Functions
     # provided by the sprig library are available in the template. The
-    # following field are available in the template:
+    # following fields are available in the template:
     # .Key - The bibtex entry ID
     # .Type - The bibtex entry type (e.g. "article")
     # .Fields - A map of fields that appear in the bibtex entry
