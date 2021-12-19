@@ -1,4 +1,4 @@
-package archive
+package handlers
 
 import (
 	"bytes"
@@ -6,52 +6,8 @@ import (
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"io"
-	"mime"
 	"net/http"
-	"net/url"
 )
-
-var DefaultHandler = MultiHandler{
-	NewEmbeddedPdfHandler(),
-	&PassthroughHandler{},
-}
-
-type HttpResponse struct {
-	Url    url.URL
-	Body   []byte
-	Header http.Header
-}
-
-type SourceContent struct {
-	Content   []byte
-	MediaType string
-}
-
-func (r *HttpResponse) MediaType() string {
-	mediaType, _, err := mime.ParseMediaType(r.Header.Get(ContentTypeHeader))
-	if err == nil {
-		return mediaType
-	} else {
-		return DefaultMediaType
-	}
-}
-
-func (r *HttpResponse) ContentDisposition() string {
-	return r.Header.Get(ContentDispositionHeader)
-}
-
-type DownloadHandler interface {
-	Handle(ctx context.Context, response *HttpResponse) (*SourceContent, error)
-}
-
-type PassthroughHandler struct{}
-
-func (s *PassthroughHandler) Handle(_ context.Context, response *HttpResponse) (*SourceContent, error) {
-	return &SourceContent{
-		Content:   response.Body,
-		MediaType: response.MediaType(),
-	}, nil
-}
 
 type EmbeddedPdfHandler struct {
 	tagFinder *TagFinder
@@ -128,23 +84,6 @@ func (e *EmbeddedPdfHandler) Handle(_ context.Context, response *HttpResponse) (
 			Content:   content,
 			MediaType: "application/pdf",
 		}, nil
-	}
-
-	return nil, nil
-}
-
-type MultiHandler []DownloadHandler
-
-func (m MultiHandler) Handle(ctx context.Context, response *HttpResponse) (*SourceContent, error) {
-	for _, handler := range m {
-		content, err := handler.Handle(ctx, response)
-
-		switch {
-		case err != nil:
-			return nil, err
-		case content != nil:
-			return content, nil
-		}
 	}
 
 	return nil, nil

@@ -1,4 +1,4 @@
-package archive
+package handlers
 
 import (
 	"golang.org/x/net/html"

@@ -6,13 +6,7 @@ import (
 
 type ContentDisposition string
 
-const (
-	ContentDispositionHeader = "Content-Disposition"
-	ContentTypeHeader        = "Content-Type"
-	UserAgentHeader          = "User-Agent"
-	DefaultFileName          = "source"
-	DefaultMediaType         = "application/octet-stream"
-)
+const DefaultFileName = "source"
 
 func defaultFileName(mediaType string) (string, error) {
 	extensions, err := mime.ExtensionsByType(mediaType)
