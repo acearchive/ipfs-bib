@@ -3,22 +3,33 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"github.com/frawleyskid/ipfs-bib/config"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"io"
 	"net/http"
 )
 
-type EmbeddedPdfHandler struct {
+type EmbeddedHandler struct {
 	tagFinder *TagFinder
 }
 
-func NewEmbeddedPdfHandler() *EmbeddedPdfHandler {
-	return &EmbeddedPdfHandler{
+func NewEmbeddedHandler(cfg *config.EmbedHandler) DownloadHandler {
+	if !cfg.Enabled {
+		return &NoOpHandler{}
+	}
+
+	mediaTypeSet := make(map[string]struct{})
+	for _, mediaType := range cfg.MediaTypes {
+		mediaTypeSet[mediaType] = struct{}{}
+	}
+
+	return &EmbeddedHandler{
 		tagFinder: NewTagFinder(func(node *html.Node) bool {
 			if node.Type == html.ElementNode && (node.DataAtom == atom.Object || node.DataAtom == atom.Embed) {
 				if value := FindAttr(node, "type"); value != nil {
-					return *value == "application/pdf"
+					_, exists := mediaTypeSet[*value]
+					return exists
 				}
 			}
 
@@ -27,7 +38,7 @@ func NewEmbeddedPdfHandler() *EmbeddedPdfHandler {
 	}
 }
 
-func (e *EmbeddedPdfHandler) Handle(_ context.Context, response *HttpResponse) (*SourceContent, error) {
+func (e *EmbeddedHandler) Handle(_ context.Context, response *HttpResponse) (*SourceContent, error) {
 	if response.MediaType() != "text/html" {
 		return nil, nil
 	}
@@ -46,27 +57,27 @@ func (e *EmbeddedPdfHandler) Handle(_ context.Context, response *HttpResponse) (
 	}
 
 	if embeddedNode := e.tagFinder.Find(documentNode); embeddedNode != nil {
-		var pdfUrl string
+		var contentUrl string
 
 		switch embeddedNode.DataAtom {
 		case atom.Object:
 			if value := FindAttr(embeddedNode, "data"); value != nil {
-				pdfUrl = *value
+				contentUrl = *value
 			} else {
 				return nil, nil
 			}
 		case atom.Embed:
 			if value := FindAttr(embeddedNode, "src"); value != nil {
-				pdfUrl = *value
+				contentUrl = *value
 			} else {
 				return nil, nil
 			}
-			pdfUrl = *FindAttr(embeddedNode, "src")
+			contentUrl = *FindAttr(embeddedNode, "src")
 		default:
 			panic("unexpected html node")
 		}
 
-		response, err := http.Get(pdfUrl)
+		response, err := http.Get(contentUrl)
 		if err != nil {
 			return nil, err
 		}
@@ -80,9 +91,14 @@ func (e *EmbeddedPdfHandler) Handle(_ context.Context, response *HttpResponse) (
 			return nil, err
 		}
 
+		mediaType := FindAttr(embeddedNode, "type")
+		if mediaType == nil {
+			panic("node unexpectedly missing its content type")
+		}
+
 		return &SourceContent{
 			Content:   content,
-			MediaType: "application/pdf",
+			MediaType: *mediaType,
 		}, nil
 	}
 

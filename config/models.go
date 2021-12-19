@@ -17,19 +17,19 @@ type Archive struct {
 	ExcludedTypes []string `toml:"excluded-types"`
 }
 
-type Embed struct {
+type EmbedHandler struct {
 	Enabled    bool     `toml:"enabled" default:"true"`
 	MediaTypes []string `toml:"media-types"`
 }
 
-type Monolith struct {
+type MonolithHandler struct {
 	Enabled bool   `toml:"enabled" default:"true"`
 	Path    string `toml:"path" default:"monolith"`
 }
 
 type Handlers struct {
-	Embed    Embed    `toml:"embed"`
-	Monolith Monolith `toml:"monolith"`
+	Embed    EmbedHandler    `toml:"embed"`
+	Monolith MonolithHandler `toml:"monolith"`
 }
 
 type Proxy struct {

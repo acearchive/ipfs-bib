@@ -3,18 +3,23 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"github.com/frawleyskid/ipfs-bib/config"
 	"os/exec"
 )
 
-type HtmlSnapshotHandler struct {
+type MonolithHandler struct {
 	path string
 }
 
-func NewHtmlSnapshotHandler() *HtmlSnapshotHandler {
-	return &HtmlSnapshotHandler{"monolith"}
+func NewMonolithHandler(cfg *config.MonolithHandler) DownloadHandler {
+	if cfg.Enabled {
+		return &MonolithHandler{path: cfg.Path}
+	} else {
+		return &NoOpHandler{}
+	}
 }
 
-func (s *HtmlSnapshotHandler) Handle(_ context.Context, response *HttpResponse) (*SourceContent, error) {
+func (s *MonolithHandler) Handle(_ context.Context, response *HttpResponse) (*SourceContent, error) {
 	if response.MediaType() != "text/html" {
 		return nil, nil
 	}

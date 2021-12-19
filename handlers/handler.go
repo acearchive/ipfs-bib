@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"github.com/frawleyskid/ipfs-bib/config"
 	"mime"
 	"net/http"
 	"net/url"
@@ -12,12 +13,6 @@ const (
 	ContentDispositionHeader = "Content-Disposition"
 	DefaultMediaType         = "application/octet-stream"
 )
-
-var DefaultHandler = MultiHandler{
-	NewEmbeddedPdfHandler(),
-	NewHtmlSnapshotHandler(),
-	&PassthroughHandler{},
-}
 
 type HttpResponse struct {
 	Url    url.URL
@@ -54,4 +49,18 @@ func (s *PassthroughHandler) Handle(_ context.Context, response *HttpResponse) (
 		Content:   response.Body,
 		MediaType: response.MediaType(),
 	}, nil
+}
+
+type NoOpHandler struct{}
+
+func (n *NoOpHandler) Handle(_ context.Context, response *HttpResponse) (*SourceContent, error) {
+	return nil, nil
+}
+
+func FromConfig(cfg *config.Handlers) DownloadHandler {
+	return MultiHandler{
+		NewEmbeddedHandler(&cfg.Embed),
+		NewMonolithHandler(&cfg.Monolith),
+		&PassthroughHandler{},
+	}
 }
