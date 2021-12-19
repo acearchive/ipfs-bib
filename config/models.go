@@ -27,22 +27,22 @@ type Monolith struct {
 	Path    string `toml:"path" default:"monolith"`
 }
 
-type Handler struct {
+type Handlers struct {
 	Embed    Embed    `toml:"embed"`
 	Monolith Monolith `toml:"monolith"`
 }
 
 type Proxy struct {
-	Schemes   []string `toml:"schemes"`
-	Doi       bool     `toml:"doi"`
-	Hostnames []string `toml:"hostnames"`
+	Schemes          []string `toml:"schemes"`
+	IncludeHostnames []string `toml:"include-hostnames"`
+	ExcludeHostnames []string `toml:"exclude-hostnames"`
 }
 
 type Config struct {
-	Ipfs    Ipfs    `toml:"ipfs"`
-	Archive Archive `toml:"bib"`
-	Handler Handler `toml:"handler"`
-	Proxies []Proxy `toml:"proxies"`
+	Ipfs     Ipfs     `toml:"ipfs"`
+	Archive  Archive  `toml:"bib"`
+	Handlers Handlers `toml:"handlers"`
+	Proxies  []Proxy  `toml:"proxies"`
 }
 
 func FromToml(file string) (*Config, error) {

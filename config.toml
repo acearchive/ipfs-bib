@@ -29,7 +29,7 @@
     #]
 
 # A handler which looks for embedded documents in HTML documents.
-[handler.embed]
+[handlers.embed]
     # Enable this handler.
     enabled = true
 
@@ -39,7 +39,7 @@
     ]
 
 # A handler which takes a snapshot of an HTML document using monolith.
-[handler.monolith]
+[handlers.monolith]
     # Enable this handler.
     enabled = true
 
@@ -50,24 +50,34 @@
 # A list of proxy rules which can be used to resolve source URLs or DOIs.
 #[[proxies]]
     # A list of proxy schemes to try in order. Each scheme is a golang
-    # `text/template` template which returns the proxied URL. Functions
-    # provided by the sprig library are available in the template. The
-    # following field are available in the template:
+    # `text/template` template which returns the proxied URL. If a template
+    # evaluates to an empty string, it is ignored. Functions provided by the
+    # sprig library are available in the template. The following fields are
+    # available in the template:
     # .Doi - The DOI of the entry, excluding the doi: or https://doi.org/ prefix (e.g. 10.1038/nphys1170)
-    # .Hostname - The hostname of source URL (e.g. example.com)
-    # .Path - The path of the source URL, excluding the leading slash (e.g. about/index.html)
+    # .Url.Host - The hostname of source URL (e.g. example.com)
+    # .Url.Path - The path of the source URL, excluding the leading slash (e.g. about/index.html)
+    # .Url.Directory - The directory path of the source URL, excluding the leading slash (e.g. about/)
+    # .Url.Filename - The file name of the source URL (e.g. index.html)
+    # If either `.Doi` or `.Url` don't exist in the bibtex entry, they will be
+    # nil.
     #schemes = [
-    #    "example.com/{{ .Doi }}",
-    #    "{{ .Hostname }}.example.com/{{ .Path }}",
+    #    "{{ if not (empty .Doi) }}example.com/{{ .Doi }}{{ end }}",
+    #    "{{ if not (empty .Url) }}{{ .Url.Hostname }}.example.com/{{ .Url.Path }}{{ end }}",
     #]
 
-    # Use this proxy rule for entries with a DOI. This supersedes `hostnames`.
-    #doi = true
+    # The entry URL is only passed to the template when it has one of these
+    # hostnames. Otherwise, the `.Url` field will be nil. If this list is
+    # empty, then the entry URL is always passed to the template unless its
+    # hostname is in `exclude-hostnames`.
+    #include-hostnames = [
+    #    "example.org",
+    #    "research.example.com",
+    #]
 
-    # This proxy rule is only applied when the entry has a URL with one of
-    # these hostnames. If this list is empty, then the proxy rule applies to
-    # all entries.
-    #hostnames = [
+    # The entry URL is not passed to the template when it has one of these
+    # hostnames. In this case, the `.Url` field will be nil.
+    #exclude-hostnames = [
     #    "example.org",
     #    "research.example.com",
     #]
