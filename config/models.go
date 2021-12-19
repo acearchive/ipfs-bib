@@ -23,8 +23,17 @@ type EmbedHandler struct {
 }
 
 type MonolithHandler struct {
-	Enabled bool   `toml:"enabled" default:"true"`
-	Path    string `toml:"path" default:"monolith"`
+	Enabled         bool   `toml:"enabled" default:"true"`
+	Path            string `toml:"path" default:"monolith"`
+	AllowInsecure   bool   `toml:"allow-insecure" default:"false"`
+	IncludeAudio    bool   `toml:"include-audio" default:"true"`
+	IncludeCss      bool   `toml:"include-css" default:"true"`
+	IncludeFonts    bool   `toml:"include-fonts" default:"true"`
+	IncludeFrames   bool   `toml:"include-frames" default:"true"`
+	IncludeImages   bool   `toml:"include-images" default:"true"`
+	IncludeJs       bool   `toml:"include-js" default:"true"`
+	IncludeVideo    bool   `toml:"include-video" default:"true"`
+	IncludeMetadata bool   `toml:"include-metadata" default:"true"`
 }
 
 type Handlers struct {

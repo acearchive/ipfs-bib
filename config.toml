@@ -46,6 +46,33 @@
     # The path to the monolith binary.
     path = "monolith"
 
+    Allow invalid x.509 (TLS) certificates.
+    allow-insecure = false
+
+    # Include audio sources.
+    include-audio = true
+
+    # Inlclude CSS.
+    include-css = true
+
+    # Include fonts.
+    include-fonts = true
+
+    # Include frames and iframes.
+    include-frames = true
+
+    # Include images.
+    include-images = true
+
+    # Include JavaScript.
+    include-js = true
+
+    # Include video sources.
+    include-video = true
+
+    # Include timestamp and source information.
+    include-metadata = true
+
 
 # A list of proxy rules which can be used to resolve source URLs or DOIs.
 #[[proxies]]
