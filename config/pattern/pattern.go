@@ -16,6 +16,21 @@ type Var rune
 
 type Pattern string
 
+type ParseResult struct {
+	output string
+	vars   map[Var]struct{}
+}
+
+func (r *ParseResult) String() string {
+	return r.output
+}
+
+func (r *ParseResult) HasVar(variable Var) bool {
+	_, ok := r.vars[variable]
+
+	return ok
+}
+
 type Parser struct {
 	variables map[Var]*string
 }
@@ -24,21 +39,22 @@ func NewParser(variables map[Var]*string) Parser {
 	return Parser{variables}
 }
 
-func (p Parser) Parse(pattern Pattern) (string, error) {
-	result := string(pattern)
+func (p Parser) Parse(pattern Pattern) (*ParseResult, error) {
+	output := string(pattern)
+	vars := make(map[Var]struct{})
 	offset := 0
 
 	for {
-		matchRange := parserRegex.FindStringIndex(result[offset:])
+		matchRange := parserRegex.FindStringIndex(output[offset:])
 		if matchRange == nil {
 			break
 		}
 
 		start, end := matchRange[0]+offset, matchRange[1]+offset
-		match := result[start:end]
+		match := output[start:end]
 
 		if match == "%%" {
-			result = result[:start] + result[end-1:]
+			output = output[:start] + output[end-1:]
 			offset = end - 1
 			continue
 		}
@@ -46,32 +62,34 @@ func (p Parser) Parse(pattern Pattern) (string, error) {
 		variable := Var(match[1])
 		value, ok := p.variables[variable]
 		if !ok {
-			return "", fmt.Errorf("%w: %s", ErrInvalidPatternVar, string(variable))
+			return nil, fmt.Errorf("%w: %s", ErrInvalidPatternVar, string(variable))
 		} else if value == nil {
-			return "", fmt.Errorf("%w: %s", ErrMissingPatternValue, string(variable))
+			return nil, fmt.Errorf("%w: %s", ErrMissingPatternValue, string(variable))
 		}
 
-		result = result[:start] + *value + result[end:]
+		vars[variable] = struct{}{}
+
+		output = output[:start] + *value + output[end:]
 
 		// We're adding the value but removing the variable
 		offset = end + len(*value) - 2
 	}
 
-	return result, nil
+	return &ParseResult{output, vars}, nil
 }
 
 // ParseFirst parses the first pattern where none of the values are missing.
-func (p Parser) ParseFirst(patterns []Pattern) (string, error) {
+func (p Parser) ParseFirst(patterns []Pattern) (*ParseResult, error) {
 	for _, pattern := range patterns {
 		switch result, err := p.Parse(pattern); {
 		case errors.Is(err, ErrMissingPatternValue):
 			continue
 		case err != nil:
-			return "", err
+			return nil, err
 		default:
 			return result, nil
 		}
 	}
 
-	return "", ErrMissingPatternValue
+	return nil, ErrMissingPatternValue
 }
