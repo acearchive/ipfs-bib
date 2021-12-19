@@ -37,29 +37,24 @@
     #    "text/html",
     #]
 
-# A list of handlers which can be used to customize how certain media types are
-# archived. This could be used, for example, to archive web pages as HTML or
-# WARC files.
-#[[handlers]]
-    # The media types (MIME types) that this handler will be used for.
-    #media-types = [
-    #    "text/html",
-    #]
+# A handler which looks for embedded documents in HTML documents.
+[handler.embed]
+    # Enable this handler.
+    enabled = true
 
-    # The command that will be executed which writes the content to be archived
-    # to stdout. This is a pattern which accepts the following variables:
-    # %u - The URL of the source content.
-    # %o - An output file to write the content to if the command doesn't
-    # support writing to stdout.
-    # %m - The media type (MIME type) of the source content.
-    #command = "archive.sh --url %u --output %o"
+    # The media types (MIME types) of the embedded content to look for.
+    media-types = [
+        "application/pdf",
+    ]
 
-    # Whether to pass the downloaded source content to the stdin of the
-    # specified command.
-    #use-stdin = false
+# A handler which takes a snapshot of an HTML document using monolith.
+[handler.monolith]
+    # Enable this handler.
+    enabled = true
 
-    # The media type (MIME type) of the content returned by the command.
-    #output-type = "application/warc"
+    # The path to the monolith binary.
+    path = "monolith"
+
 
 # A list of proxy rules which can be used to resolve source URLs or DOIs.
 #[[proxies]]

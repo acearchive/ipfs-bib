@@ -19,11 +19,19 @@ type Archive struct {
 	ExcludedTypes []string          `toml:"excluded-types"`
 }
 
-type Handler struct {
+type Embed struct {
+	Enabled    bool     `toml:"enabled" default:"true"`
 	MediaTypes []string `toml:"media-types"`
-	Command    string   `toml:"command"`
-	UseStdin   bool     `toml:"use-stdin"`
-	OutputType string   `toml:"output-type"`
+}
+
+type Monolith struct {
+	Enabled bool   `toml:"enabled" default:"true"`
+	Path    string `toml:"path" default:"monolith"`
+}
+
+type Handler struct {
+	Embed    Embed    `toml:"embed"`
+	Monolith Monolith `toml:"monolith"`
 }
 
 type Proxy struct {
@@ -33,10 +41,10 @@ type Proxy struct {
 }
 
 type Config struct {
-	Ipfs     Ipfs      `toml:"ipfs"`
-	Archive  Archive   `toml:"bib"`
-	Handlers []Handler `toml:"handlers"`
-	Proxies  []Proxy   `toml:"proxies"`
+	Ipfs    Ipfs    `toml:"ipfs"`
+	Archive Archive `toml:"bib"`
+	Handler Handler `toml:"handler"`
+	Proxies []Proxy `toml:"proxies"`
 }
 
 func FromToml(file string) (*Config, error) {
