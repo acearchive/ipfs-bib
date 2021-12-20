@@ -84,7 +84,7 @@
     # available in the template:
     #
     # .Doi - The DOI of the entry, excluding the doi: or https://doi.org/ prefix (e.g. 10.1038/nphys1170)
-    # .Url.Host - The hostname of source URL (e.g. example.com)
+    # .Url.Hostname - The hostname of source URL (e.g. example.com)
     # .Url.Path - The path of the source URL, excluding the leading slash (e.g. about/index.html)
     # .Url.Directory - The directory path of the source URL, excluding the leading slash (e.g. about/)
     # .Url.Filename - The file name of the source URL (e.g. index.html)
@@ -93,8 +93,8 @@
     # nil. If the bibtex entry has a DOI but not a URL, the `.Url` field will
     # be populated by following an https://doi.org/ link.
     #schemes = [
-    #    "{{ if not (empty .Doi) }}example.com/{{ .Doi }}{{ end }}",
-    #    "{{ .Url.Hostname }}.example.com/{{ .Url.Path }}",
+    #    "{{ if not (empty .Doi) }}https://example.com/{{ .Doi }}{{ end }}",
+    #    "https://{{ .Url.Hostname }}.example.com/{{ .Url.Path }}",
     #]
 
     # Only use this proxy rule when the source is located at one of these
