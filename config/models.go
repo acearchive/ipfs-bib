@@ -13,16 +13,14 @@ type Ipfs struct {
 }
 
 type Archive struct {
-	NameTemplate  string   `toml:"name-template" default:"{{ coalesce (get .Fields \"doi\") .Key }}"`
+	FileName      string   `toml:"file-name" default:"source{{ .Extension }}"`
+	DirectoryName string   `toml:"directory-name" default:"{{ coalesce (get .Fields \"doi\") .Key }}"`
+	WrapSources   bool     `toml:"wrap-sources" default:"true"`
+	EmbeddedTypes []string `toml:"embedded-types"`
 	ExcludedTypes []string `toml:"excluded-types"`
 }
 
-type EmbedHandler struct {
-	Enabled    bool     `toml:"enabled" default:"true"`
-	MediaTypes []string `toml:"media-types"`
-}
-
-type MonolithHandler struct {
+type Snapshot struct {
 	Enabled         bool   `toml:"enabled" default:"true"`
 	Path            string `toml:"path" default:"monolith"`
 	AllowInsecure   bool   `toml:"allow-insecure" default:"false"`
@@ -36,22 +34,17 @@ type MonolithHandler struct {
 	IncludeMetadata bool   `toml:"include-metadata" default:"true"`
 }
 
-type Handlers struct {
-	Embed    EmbedHandler    `toml:"embed"`
-	Monolith MonolithHandler `toml:"monolith"`
-}
-
-type Proxy struct {
+type Resolver struct {
 	Schemes          []string `toml:"schemes"`
 	IncludeHostnames []string `toml:"include-hostnames"`
 	ExcludeHostnames []string `toml:"exclude-hostnames"`
 }
 
 type Config struct {
-	Ipfs     Ipfs     `toml:"ipfs"`
-	Archive  Archive  `toml:"bib"`
-	Handlers Handlers `toml:"handlers"`
-	Proxies  []Proxy  `toml:"proxies"`
+	Ipfs      Ipfs       `toml:"ipfs"`
+	Archive   Archive    `toml:"archive"`
+	Snapshot  Snapshot   `toml:"snapshot"`
+	Resolvers []Resolver `toml:"resolvers"`
 }
 
 func FromToml(file string) (*Config, error) {

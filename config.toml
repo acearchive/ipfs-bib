@@ -13,37 +13,48 @@
     car-version = "1"
 
 [archive]
-    # A golang `text/template` template which is passed the contents of the
-    # bibtex entry and returns the name of the source directory. Functions
+    # A template which determines the file name of the archived source content
+    # in IPFS.  This is a golang `text/template` template which is passed the
+    # contents of the bibtex entry and returns the file name. Functions
     # provided by the sprig library are available in the template. The
     # following fields are available in the template:
     #
     # .Key - The bibtex entry ID
     # .Type - The bibtex entry type (e.g. "article")
     # .Fields - A map of fields that appear in the bibtex entry
-    name-template = "{{ coalesce (get .Fields \"doi\") .Key }}"
+    # .Extension - A file extension based on the media type (MIME type), including the leading dot
+    file-name = "source{{ .Extension }}"
 
-    # The media types (MIME types) of content that the tool will not attempt to
-    # archive.
-    #excluded-types = [
-    #    "text/html",
-    #]
+    # A template which determines the directory name of the archived source
+    # content in IPFS.  This is a golang `text/template` template which is
+    # passed the contents of the bibtex entry and returns the directory name.
+    # Functions provided by the sprig library are available in the template.
+    # The following fields are available in the template:
+    #
+    # .Key - The bibtex entry ID
+    # .Type - The bibtex entry type (e.g. "article")
+    # .Fields - A map of fields that appear in the bibtex entry
+    directory-name = "{{ coalesce (get .Fields \"doi\") .Key }}"
+    
+    # By default, the archived source files in IPFS are each put in their own
+    # directory. Wrapping the source files in directories can be disabled using
+    # this option. If this is false, `directory-name` is ignored.
+    wrap-sources = true
 
-# A handler which looks for embedded documents in HTML documents.
-[handlers.embed]
-    # Enable this handler.
-    enabled = true
-
-    # The media types (MIME types) of the embedded content to look for.
-    media-types = [
+    # If the source URL points to a web page, the tool can search for embedded
+    # documents in the page. This is a list of the media types (MIME types) of
+    # embedded content to search for. To disable this feature, leave this list
+    # empty.
+    embedded-types = [
         "application/pdf",
     ]
 
-# A handler which takes a snapshot of an HTML document using monolith.
-[handlers.monolith]
-    # Enable this handler.
-    enabled = true
+    # The media types (MIME types) of content that the tool will not attempt to
+    # archive.
+    excluded-types = []
 
+# Take snapshots of web pages using monolith.
+[snapshot]
     # The path to the monolith binary.
     path = "monolith"
 
@@ -74,10 +85,9 @@
     # Include timestamp and source information.
     include-metadata = true
 
-
-# A list of proxy rules which can be used to resolve source URLs or DOIs.
-#[[proxies]]
-    # A list of proxy schemes to try in order. Each scheme is a golang
+# Resolve sources through a link resolver.
+#[[resolvers]]
+    # A list of URL schemes to try in order. Each scheme is a golang
     # `text/template` template which returns the proxied URL. If a template
     # evaluates to an empty string, it is ignored. Functions provided by the
     # sprig library are available in the template. The following fields are
@@ -97,15 +107,15 @@
     #    "https://{{ .Url.Hostname }}.example.com/{{ .Url.Path }}",
     #]
 
-    # Only use this proxy rule when the source is located at one of these
-    # hostnames.  If this list is empty, the proxy will be used for all hosts
-    # not excluded by `exclude-hostnames`.
+    # Only use this resolver when the source is located at one of these
+    # hostnames.  If this list is empty, the resolver will be used for all
+    # hosts not excluded by `exclude-hostnames`.
     #include-hostnames = [
     #    "example.org",
     #    "research.example.com",
     #]
 
-    # Don't use this proxy rule if the source is located at one of these
+    # Don't use this resolver if the source is located at one of these
     # hostnames.
     #exclude-hostnames = [
     #    "example.org",
