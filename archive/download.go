@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/Masterminds/sprig"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/handlers"
 	"io"
@@ -108,7 +109,7 @@ func (c *DownloadClient) resolveProxy(locator *config.ResolvedSourceLocator, cfg
 		}
 
 		for _, scheme := range proxyCfg.Schemes {
-			schemeTemplate, err := template.New("proxy-scheme").Parse(scheme)
+			schemeTemplate, err := template.New("proxies.schemes").Funcs(sprig.TxtFuncMap()).Parse(scheme)
 			if err != nil {
 				return nil, err
 			}
