@@ -1,52 +1,66 @@
 package archive
 
 import (
-	"errors"
-	"fmt"
 	"github.com/ipfs/go-cid"
+	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/nickng/bibtex"
 	"net/url"
 	"strings"
 )
 
-const (
-	DoiPrefix = "doi:"
-	DoiUrl    = "https://doi.org/"
-)
+const CanonicalDoiPrefix = "https://doi.org/"
 
-var (
-	ErrInvalidReferenceUrl = errors.New("invalid URL from bibtex file")
-	ErrMissingReferenceUrl = errors.New("this reference has no DOI or URL")
-)
-
-func doiToRawUrl(doi string) (rawUrl string) {
-	switch {
-	case strings.HasPrefix(doi, DoiPrefix):
-		return DoiUrl + strings.TrimPrefix(doi, DoiPrefix)
-	case strings.HasPrefix(doi, DoiUrl):
-		return doi
-	default:
-		return DoiUrl + doi
-	}
+var DoiPrefixes = []string{
+	"doi:",
+	"https://doi.org/",
+	"http://doi.org/",
+	"doi.org/",
 }
 
-func UrlFromBibEntry(entry bibtex.BibEntry) (*url.URL, error) {
-	var rawUrl string
+func entryField(entry *bibtex.BibEntry, field string) *string {
+	if value, ok := entry.Fields[field]; ok {
+		stringValue := value.String()
+		return &stringValue
+	}
 
-	if doi, ok := entry.Fields["doi"]; ok {
-		rawUrl = doiToRawUrl(doi.String())
-	} else if urlField, ok := entry.Fields["url"]; ok {
-		rawUrl = urlField.String()
+	return nil
+}
+
+func LocateEntry(entry *bibtex.BibEntry) (*config.SourceLocator, error) {
+	var (
+		sourceUrl *url.URL
+		sourceDoi *string
+		err       error
+	)
+
+	if rawDoi := entryField(entry, "doi"); rawDoi != nil {
+		for _, doiPrefix := range DoiPrefixes {
+			if strings.HasPrefix(*rawDoi, doiPrefix) {
+				doi := strings.TrimPrefix(*rawDoi, doiPrefix)
+				sourceDoi = &doi
+
+				sourceUrl, err = url.Parse(CanonicalDoiPrefix + doi)
+				if err != nil {
+					return nil, err
+				}
+
+				break
+			}
+		}
+	}
+
+	if rawUrl := entryField(entry, "url"); rawUrl != nil {
+		sourceUrl, err = url.Parse(*rawUrl)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if sourceUrl == nil {
+		return nil, nil
 	} else {
-		return nil, ErrMissingReferenceUrl
+		return &config.SourceLocator{Url: *sourceUrl, Doi: sourceDoi}, nil
 	}
-
-	entryUrl, err := url.Parse(rawUrl)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidReferenceUrl, err)
-	}
-
-	return entryUrl, nil
 }
 
 type BibSource struct {

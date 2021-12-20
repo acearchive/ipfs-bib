@@ -7,20 +7,14 @@ import (
 	"strings"
 )
 
-var DoiPrefixes = []string{
-	"doi:",
-	"https://doi.org/",
-	"http://doi.org/",
-	"doi.org/",
+type SourceLocator struct {
+	Url url.URL
+	Doi *string
 }
 
-func entryField(entry *bibtex.BibEntry, field string) *string {
-	if value, ok := entry.Fields[field]; ok {
-		stringValue := value.String()
-		return &stringValue
-	}
-
-	return nil
+type ResolvedSourceLocator struct {
+	Url url.URL
+	Doi *string
 }
 
 type NameTemplateInput struct {
@@ -52,53 +46,37 @@ type ProxySchemeUrl struct {
 
 type ProxySchemeInput struct {
 	Doi *string
-	Url *ProxySchemeUrl
+	Url ProxySchemeUrl
 }
 
-func NewProxySchemeInput(entry *bibtex.BibEntry, config *Proxy) (*ProxySchemeInput, error) {
-	input := ProxySchemeInput{}
+func NewProxySchemeInput(locator *ResolvedSourceLocator, cfg *Proxy) (*ProxySchemeInput, error) {
+	useProxy := len(cfg.IncludeHostnames) == 0
 
-	if rawDoi := entryField(entry, "doi"); rawDoi != nil {
-		for _, doiPrefix := range DoiPrefixes {
-			if strings.HasPrefix(*rawDoi, doiPrefix) {
-				doi := strings.TrimPrefix(*rawDoi, doiPrefix)
-				input.Doi = &doi
-				break
-			}
+	for _, includeHost := range cfg.IncludeHostnames {
+		if locator.Url.Hostname() == includeHost {
+			useProxy = true
+			break
 		}
 	}
 
-	if rawUrl := entryField(entry, "url"); rawUrl != nil {
-		entryUrl, err := url.Parse(*rawUrl)
-		if err != nil {
-			return nil, err
-		}
-
-		includeUrl := len(config.IncludeHostnames) == 0
-
-		for _, includeHost := range config.IncludeHostnames {
-			if entryUrl.Hostname() == includeHost {
-				includeUrl = true
-				break
-			}
-		}
-
-		for _, excludeHost := range config.ExcludeHostnames {
-			if entryUrl.Hostname() == excludeHost {
-				includeUrl = false
-				break
-			}
-		}
-
-		if includeUrl {
-			input.Url = &ProxySchemeUrl{
-				Hostname:  entryUrl.Hostname(),
-				Path:      strings.TrimPrefix(entryUrl.Path, "/"),
-				Directory: strings.TrimPrefix(path.Dir(entryUrl.Path), "/") + "/",
-				Filename:  strings.TrimPrefix(path.Base(entryUrl.Path), "/"),
-			}
+	for _, excludeHost := range cfg.ExcludeHostnames {
+		if locator.Url.Hostname() == excludeHost {
+			useProxy = false
+			break
 		}
 	}
 
-	return &input, nil
+	if !useProxy {
+		return nil, nil
+	}
+
+	return &ProxySchemeInput{
+		Doi: locator.Doi,
+		Url: ProxySchemeUrl{
+			Hostname:  locator.Url.Hostname(),
+			Path:      strings.TrimPrefix(locator.Url.Path, "/"),
+			Directory: strings.TrimPrefix(path.Dir(locator.Url.Path), "/") + "/",
+			Filename:  strings.TrimPrefix(path.Base(locator.Url.Path), "/"),
+		},
+	}, nil
 }
