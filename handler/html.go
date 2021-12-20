@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"golang.org/x/net/html"

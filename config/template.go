@@ -2,20 +2,9 @@ package config
 
 import (
 	"github.com/nickng/bibtex"
-	"net/url"
 	"path"
 	"strings"
 )
-
-type SourceLocator struct {
-	Url url.URL
-	Doi *string
-}
-
-type ResolvedSourceLocator struct {
-	Url url.URL
-	Doi *string
-}
 
 type NameTemplateInput struct {
 	Key    string
@@ -49,17 +38,22 @@ type ProxySchemeInput struct {
 	Url ProxySchemeUrl
 }
 
-func NewProxySchemeInput(locator *ResolvedSourceLocator, cfg *Proxy) (*ProxySchemeInput, error) {
-	useProxy := len(cfg.IncludeHostnames) == 0
+type HostnameFilter struct {
+	Include []string
+	Exclude []string
+}
 
-	for _, includeHost := range cfg.IncludeHostnames {
+func NewProxySchemeInput(locator *SourceLocator, filter *HostnameFilter) (*ProxySchemeInput, error) {
+	useProxy := len(filter.Include) == 0
+
+	for _, includeHost := range filter.Include {
 		if locator.Url.Hostname() == includeHost {
 			useProxy = true
 			break
 		}
 	}
 
-	for _, excludeHost := range cfg.ExcludeHostnames {
+	for _, excludeHost := range filter.Exclude {
 		if locator.Url.Hostname() == excludeHost {
 			useProxy = false
 			break

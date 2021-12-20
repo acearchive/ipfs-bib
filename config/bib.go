@@ -1,8 +1,7 @@
-package archive
+package config
 
 import (
 	"github.com/ipfs/go-cid"
-	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/nickng/bibtex"
 	"net/url"
 	"strings"
@@ -17,6 +16,11 @@ var DoiPrefixes = []string{
 	"doi.org/",
 }
 
+type SourceLocator struct {
+	Url url.URL
+	Doi *string
+}
+
 func entryField(entry *bibtex.BibEntry, field string) *string {
 	if value, ok := entry.Fields[field]; ok {
 		stringValue := value.String()
@@ -26,7 +30,7 @@ func entryField(entry *bibtex.BibEntry, field string) *string {
 	return nil
 }
 
-func LocateEntry(entry *bibtex.BibEntry) (*config.SourceLocator, error) {
+func LocateEntry(entry *bibtex.BibEntry) (*SourceLocator, error) {
 	var (
 		sourceUrl *url.URL
 		sourceDoi *string
@@ -59,7 +63,7 @@ func LocateEntry(entry *bibtex.BibEntry) (*config.SourceLocator, error) {
 	if sourceUrl == nil {
 		return nil, nil
 	} else {
-		return &config.SourceLocator{Url: *sourceUrl, Doi: sourceDoi}, nil
+		return &SourceLocator{Url: *sourceUrl, Doi: sourceDoi}, nil
 	}
 }
 

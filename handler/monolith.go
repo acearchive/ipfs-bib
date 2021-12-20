@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"bytes"
@@ -12,7 +12,7 @@ type MonolithHandler struct {
 	args []string
 }
 
-func NewMonolithHandler(cfg *config.MonolithHandler) DownloadHandler {
+func NewMonolithHandler(cfg *config.Snapshot) DownloadHandler {
 	if !cfg.Enabled {
 		return &NoOpHandler{}
 	}
@@ -51,7 +51,7 @@ func NewMonolithHandler(cfg *config.MonolithHandler) DownloadHandler {
 	return &MonolithHandler{path: cfg.Path, args: args}
 }
 
-func (s *MonolithHandler) Handle(_ context.Context, response *HttpResponse) (*SourceContent, error) {
+func (s *MonolithHandler) Handle(_ context.Context, response *DownloadResponse) (*SourceContent, error) {
 	if response.MediaType() != "text/html" {
 		return nil, nil
 	}

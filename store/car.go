@@ -1,4 +1,4 @@
-package archive
+package store
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package archive
+package store
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	ipld "github.com/ipfs/go-ipld-format"
 	dag "github.com/ipfs/go-merkledag"
 	unixfs "github.com/ipfs/go-unixfs/io"
+	"github.com/frawleyskid/ipfs-bib/config"
 )
 
 type SourceStore struct {
@@ -41,7 +42,7 @@ func (s *SourceStore) Write(ctx context.Context) (cid.Cid, error) {
 	return node.Cid(), nil
 }
 
-func (s *SourceStore) AddSource(ctx context.Context, source *BibSource) (id *BibSourceId, err error) {
+func (s *SourceStore) AddSource(ctx context.Context, source *config.BibSource) (id *config.BibSourceId, err error) {
 	contentNode := dag.NewRawNode(source.Content)
 	if err := s.service.Add(ctx, contentNode); err != nil {
 		return nil, err
@@ -66,7 +67,7 @@ func (s *SourceStore) AddSource(ctx context.Context, source *BibSource) (id *Bib
 		return nil, err
 	}
 
-	return &BibSourceId{
+	return &config.BibSourceId{
 		ContentCid:   contentNode.Cid(),
 		DirectoryCid: directoryNode.Cid(),
 	}, err

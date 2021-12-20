@@ -55,6 +55,9 @@
 
 # Take snapshots of web pages using monolith.
 [snapshot]
+    # Enable taking snapshots of web pages using monolith.
+    enabled = true
+
     # The path to the monolith binary.
     path = "monolith"
 

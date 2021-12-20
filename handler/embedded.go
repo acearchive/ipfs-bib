@@ -1,9 +1,8 @@
-package handlers
+package handler
 
 import (
 	"bytes"
 	"context"
-	"github.com/frawleyskid/ipfs-bib/config"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"io"
@@ -14,13 +13,13 @@ type EmbeddedHandler struct {
 	tagFinder *TagFinder
 }
 
-func NewEmbeddedHandler(cfg *config.EmbedHandler) DownloadHandler {
-	if !cfg.Enabled {
+func NewEmbeddedHandler(mediaTypes []string) DownloadHandler {
+	if len(mediaTypes) == 0 {
 		return &NoOpHandler{}
 	}
 
 	mediaTypeSet := make(map[string]struct{})
-	for _, mediaType := range cfg.MediaTypes {
+	for _, mediaType := range mediaTypes {
 		mediaTypeSet[mediaType] = struct{}{}
 	}
 
@@ -38,7 +37,7 @@ func NewEmbeddedHandler(cfg *config.EmbedHandler) DownloadHandler {
 	}
 }
 
-func (e *EmbeddedHandler) Handle(_ context.Context, response *HttpResponse) (*SourceContent, error) {
+func (e *EmbeddedHandler) Handle(_ context.Context, response *DownloadResponse) (*SourceContent, error) {
 	if response.MediaType() != "text/html" {
 		return nil, nil
 	}
