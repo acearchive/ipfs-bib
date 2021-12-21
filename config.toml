@@ -1,6 +1,6 @@
 [ipfs]
-    # The address of the API server for your IPFS node.
-    api = "http://127.0.0.1:5001"
+    # The multiaddr of the API server for your IPFS node.
+    api = "/ip4/127.0.0.1/tcp/5001"
 
     # Generate URLs using a public gateway. If this is false, ipfs:// URLs will
     # be generated instead.

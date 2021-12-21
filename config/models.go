@@ -6,7 +6,7 @@ import (
 )
 
 type Ipfs struct {
-	Api        string `toml:"api" default:"download://127.0.0.1:5001"`
+	Api        string `toml:"api" default:"/ip4/127.0.0.1/tcp/5001"`
 	UseGateway bool   `toml:"use-gateway" default:"true"`
 	Gateway    string `toml:"gateway" default:"dweb.link"`
 	CarVersion string `toml:"car-version" default:"1"`

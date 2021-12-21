@@ -10,8 +10,8 @@ import (
 )
 
 type SourcePath struct {
-	Filename  string
-	Directory string
+	FileName      string
+	DirectoryName string
 }
 
 type SourcePathTemplate struct {
@@ -53,8 +53,8 @@ func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, mediaType string) (
 	}
 
 	return &SourcePath{
-		Filename:  string(filenameBytes.Bytes()),
-		Directory: string(directoryBytes.Bytes()),
+		FileName:      string(filenameBytes.Bytes()),
+		DirectoryName: string(directoryBytes.Bytes()),
 	}, nil
 }
 
