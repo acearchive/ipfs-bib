@@ -2,7 +2,6 @@ package archive
 
 import (
 	"context"
-	"encoding/json"
 	"github.com/ipfs/go-cid"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/handler"
@@ -75,27 +74,6 @@ func Download(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*Bib
 type Location struct {
 	Root    cid.Cid
 	Entries map[BibEntryId]config.BibEntryLocation
-}
-
-func (l *Location) MarshalJSON() ([]byte, error) {
-	rawEntries := make([]map[string]interface{}, 0, len(l.Entries))
-
-	for citeName, location := range l.Entries {
-		rawEntries = append(rawEntries, map[string]interface{}{
-			"citeName":      citeName,
-			"fileCid":       location.FileCid.String(),
-			"fileName":      location.FileName,
-			"directoryCid":  location.DirectoryCid.String(),
-			"directoryName": location.DirectoryName,
-		})
-	}
-
-	rawJson := map[string]interface{}{
-		"cid":     l.Root.String(),
-		"entries": rawEntries,
-	}
-
-	return json.Marshal(rawJson)
 }
 
 func storeContents(ctx context.Context, cfg *config.Config, contents *BibContents, sourceStore *store.SourceStore) (*Location, error) {

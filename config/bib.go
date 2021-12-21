@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"github.com/ipfs/go-cid"
 	"github.com/nickng/bibtex"
 	"net/url"
@@ -78,4 +79,22 @@ type BibEntryLocation struct {
 	FileName      string
 	DirectoryCid  cid.Cid
 	DirectoryName string
+}
+
+func (l *BibEntryLocation) IpfsUrl() *url.URL {
+	ipfsUrl, err := url.Parse(fmt.Sprintf("ipfs://%s?filename=%s", l.FileCid.String(), url.QueryEscape(l.FileName)))
+	if err != nil {
+		panic("failed to parse ipfs:// URL")
+	}
+
+	return ipfsUrl
+}
+
+func (l *BibEntryLocation) GatewayUrl(gateway string) (*url.URL, error) {
+	switch l.FileCid.Version() {
+	case 0:
+		return url.Parse(fmt.Sprintf("https://%s/ipfs/%s?filename=%s", gateway, l.FileCid.String(), url.QueryEscape(l.FileName)))
+	default:
+		return url.Parse(fmt.Sprintf("https://%s.ipfs.%s/?=%s", l.FileCid.String(), gateway, url.QueryEscape(l.FileName)))
+	}
 }
