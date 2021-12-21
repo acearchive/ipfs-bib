@@ -73,7 +73,7 @@ func Download(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*Bib
 
 type Location struct {
 	Root    cid.Cid
-	Entries map[BibEntryId]config.BibSourceId
+	Entries map[BibEntryId]config.BibEntryLocation
 }
 
 func storeContents(ctx context.Context, cfg *config.Config, contents *BibContents, sourceStore *store.SourceStore) (*Location, error) {
@@ -82,7 +82,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents *BibContent
 		return nil, err
 	}
 
-	idMap := make(map[BibEntryId]config.BibSourceId)
+	locationMap := make(map[BibEntryId]config.BibEntryLocation)
 
 	for entryId, source := range contents.Sources {
 		bibEntry := contents.Entries[entryId]
@@ -98,12 +98,12 @@ func storeContents(ctx context.Context, cfg *config.Config, contents *BibContent
 			DirectoryName: sourcePath.DirectoryName,
 		}
 
-		sourceId, err := sourceStore.AddSource(ctx, bibSource)
+		entryLocation, err := sourceStore.AddSource(ctx, bibSource)
 		if err != nil {
 			return nil, err
 		}
 
-		idMap[entryId] = *sourceId
+		locationMap[entryId] = *entryLocation
 	}
 
 	rootCid, err := sourceStore.Write(ctx)
@@ -113,7 +113,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents *BibContent
 
 	return &Location{
 		Root:    rootCid,
-		Entries: idMap,
+		Entries: locationMap,
 	}, nil
 }
 

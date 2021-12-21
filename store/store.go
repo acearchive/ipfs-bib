@@ -42,7 +42,7 @@ func (s *SourceStore) Write(ctx context.Context) (cid.Cid, error) {
 	return node.Cid(), nil
 }
 
-func (s *SourceStore) AddSource(ctx context.Context, source *config.BibSource) (id *config.BibSourceId, err error) {
+func (s *SourceStore) AddSource(ctx context.Context, source *config.BibSource) (*config.BibEntryLocation, error) {
 	contentNode := dag.NewRawNode(source.Content)
 	if err := s.service.Add(ctx, contentNode); err != nil {
 		return nil, err
@@ -67,8 +67,10 @@ func (s *SourceStore) AddSource(ctx context.Context, source *config.BibSource) (
 		return nil, err
 	}
 
-	return &config.BibSourceId{
-		ContentCid:   contentNode.Cid(),
-		DirectoryCid: directoryNode.Cid(),
-	}, err
+	return &config.BibEntryLocation{
+		FileCid:       contentNode.Cid(),
+		FileName:      source.FileName,
+		DirectoryCid:  directoryNode.Cid(),
+		DirectoryName: source.DirectoryName,
+	}, nil
 }

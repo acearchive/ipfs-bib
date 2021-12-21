@@ -73,7 +73,9 @@ type BibSource struct {
 	FileName      string
 }
 
-type BibSourceId struct {
-	ContentCid   cid.Cid
-	DirectoryCid cid.Cid
+type BibEntryLocation struct {
+	FileCid       cid.Cid
+	FileName      string
+	DirectoryCid  cid.Cid
+	DirectoryName string
 }
