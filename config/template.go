@@ -1,19 +1,111 @@
 package config
 
 import (
+	"bytes"
 	"github.com/nickng/bibtex"
+	"mime"
 	"path"
 	"strings"
+	"text/template"
 )
 
-type NameTemplateInput struct {
+type SourcePath struct {
+	Filename  string
+	Directory string
+}
+
+type SourcePathTemplate struct {
+	filename  template.Template
+	directory template.Template
+}
+
+func NewSourcePathTemplate(cfg *Config) (*SourcePathTemplate, error) {
+	filename, err := template.New("/archive/file-name").Parse(cfg.Archive.FileName)
+	if err != nil {
+		return nil, err
+	}
+
+	directory, err := template.New("/archive/directory-name").Parse(cfg.Archive.FileName)
+	if err != nil {
+		return nil, err
+	}
+
+	return &SourcePathTemplate{filename: *filename, directory: *directory}, nil
+}
+
+func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, mediaType string) (*SourcePath, error) {
+	var filenameBytes bytes.Buffer
+	var directoryBytes bytes.Buffer
+
+	filenameInput, err := newFileNameTemplateInput(entry, mediaType)
+	if err != nil {
+		return nil, err
+	}
+
+	directoryInput := newDirectoryNameTemplateInput(entry)
+
+	if err := s.filename.Execute(&filenameBytes, filenameInput); err != nil {
+		return nil, err
+	}
+
+	if err := s.directory.Execute(&directoryBytes, directoryInput); err != nil {
+		return nil, err
+	}
+
+	return &SourcePath{
+		Filename:  string(filenameBytes.Bytes()),
+		Directory: string(directoryBytes.Bytes()),
+	}, nil
+}
+
+type fileNameTemplateInput struct {
+	Key       string
+	Type      string
+	Fields    map[string]string
+	Extension string
+}
+
+func newFileNameTemplateInput(entry *bibtex.BibEntry, mediaType string) (*fileNameTemplateInput, error) {
+	mediaType, _, err := mime.ParseMediaType(mediaType)
+	if err != nil {
+		return nil, err
+	}
+
+	extensions, err := mime.ExtensionsByType(mediaType)
+	if err != nil {
+		return nil, err
+	}
+
+	var extension string
+
+	if extensions == nil {
+		extension = ""
+	} else {
+		extension = extensions[0]
+	}
+
+	input := fileNameTemplateInput{
+		Key:       entry.CiteName,
+		Type:      entry.Type,
+		Fields:    make(map[string]string),
+		Extension: extension,
+	}
+
+	for key, value := range entry.Fields {
+		input.Fields[key] = value.String()
+	}
+
+	return &input, nil
+}
+
+type directoryNameTemplateInput struct {
 	Key    string
 	Type   string
 	Fields map[string]string
 }
 
-func NewNameTemplateInput(entry *bibtex.BibEntry) *NameTemplateInput {
-	input := NameTemplateInput{
+func newDirectoryNameTemplateInput(entry *bibtex.BibEntry) *directoryNameTemplateInput {
+	input := directoryNameTemplateInput{
 		Key:    entry.CiteName,
 		Type:   entry.Type,
 		Fields: make(map[string]string),
