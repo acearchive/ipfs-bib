@@ -12,7 +12,7 @@ import (
 	"os"
 )
 
-type BibEntryId string
+type BibCiteName string
 
 func ParseBibtex(bibPath string) (*bibtex.BibTex, error) {
 	bibFile, err := os.Open(bibPath)
@@ -33,8 +33,8 @@ func ParseBibtex(bibPath string) (*bibtex.BibTex, error) {
 }
 
 type BibContents struct {
-	Entries map[BibEntryId]bibtex.BibEntry
-	Sources map[BibEntryId]handler.SourceContent
+	Entries map[BibCiteName]bibtex.BibEntry
+	Sources map[BibCiteName]handler.SourceContent
 }
 
 func Download(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*BibContents, error) {
@@ -47,8 +47,8 @@ func Download(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*Bib
 		return nil, err
 	}
 
-	contentMap := make(map[BibEntryId]handler.SourceContent)
-	entryMap := make(map[BibEntryId]bibtex.BibEntry)
+	contentMap := make(map[BibCiteName]handler.SourceContent)
+	entryMap := make(map[BibCiteName]bibtex.BibEntry)
 
 	for _, bibEntry := range bib.Entries {
 		locator, err := config.LocateEntry(bibEntry)
@@ -61,8 +61,8 @@ func Download(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*Bib
 			return nil, err
 		}
 
-		contentMap[BibEntryId(bibEntry.CiteName)] = *content
-		entryMap[BibEntryId(bibEntry.CiteName)] = *bibEntry
+		contentMap[BibCiteName(bibEntry.CiteName)] = *content
+		entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
 	}
 
 	return &BibContents{
@@ -73,7 +73,7 @@ func Download(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*Bib
 
 type Location struct {
 	Root    cid.Cid
-	Entries map[BibEntryId]config.BibEntryLocation
+	Entries map[BibCiteName]config.BibEntryLocation
 }
 
 func storeContents(ctx context.Context, cfg *config.Config, contents *BibContents, sourceStore *store.SourceStore) (*Location, error) {
@@ -82,7 +82,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents *BibContent
 		return nil, err
 	}
 
-	locationMap := make(map[BibEntryId]config.BibEntryLocation)
+	locationMap := make(map[BibCiteName]config.BibEntryLocation)
 
 	for entryId, source := range contents.Sources {
 		bibEntry := contents.Entries[entryId]
@@ -163,4 +163,30 @@ func ToNode(ctx context.Context, cfg *config.Config, pin bool, contents *BibCont
 	}
 
 	return location, nil
+}
+
+func UpdateBib(bib *bibtex.BibTex, gateway *string, location *Location) error {
+	for _, entry := range bib.Entries {
+		entryLocation, ok := location.Entries[BibCiteName(entry.CiteName)]
+		if !ok {
+			continue
+		}
+
+		if gateway == nil {
+			entry.Fields["url"] = bibtex.NewBibConst(entryLocation.IpfsUrl().String())
+		} else {
+			gatewayUrl, err := entryLocation.GatewayUrl(*gateway)
+			if err != nil {
+				return err
+			}
+
+			entry.Fields["url"] = bibtex.NewBibConst(gatewayUrl.String())
+		}
+	}
+
+	return nil
+}
+
+func WriteBib(bib *bibtex.BibTex, file string) error {
+	return os.WriteFile(file, []byte(bib.PrettyString()), 0644)
 }

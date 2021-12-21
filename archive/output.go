@@ -33,13 +33,13 @@ func (l *Location) ToOutput(cfg *config.Config) (*Output, error) {
 }
 
 type EntryOutput struct {
-	CiteName      BibEntryId `json:"citeName"`
-	FileCid       cid.Cid    `json:"fileCid"`
-	FileName      string     `json:"fileName"`
-	DirectoryCid  cid.Cid    `json:"directoryCid"`
-	DirectoryName string     `json:"directoryName"`
-	IpfsUrl       url.URL    `json:"ipfsUrl"`
-	GatewayUrl    url.URL    `json:"gatewayUrl"`
+	CiteName      BibCiteName `json:"citeName"`
+	FileCid       cid.Cid     `json:"fileCid"`
+	FileName      string      `json:"fileName"`
+	DirectoryCid  cid.Cid     `json:"directoryCid"`
+	DirectoryName string      `json:"directoryName"`
+	IpfsUrl       url.URL     `json:"ipfsUrl"`
+	GatewayUrl    url.URL     `json:"gatewayUrl"`
 }
 
 type Output struct {
