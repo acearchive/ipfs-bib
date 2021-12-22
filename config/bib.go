@@ -82,7 +82,7 @@ type BibEntryLocation struct {
 }
 
 func (l *BibEntryLocation) IpfsUrl() *url.URL {
-	ipfsUrl, err := url.Parse(fmt.Sprintf("ipfs://%s?filename=%s", l.FileCid.String(), url.QueryEscape(l.FileName)))
+	ipfsUrl, err := url.Parse(fmt.Sprintf("ipfs://%s/?filename=%s", l.FileCid.String(), url.QueryEscape(l.FileName)))
 	if err != nil {
 		panic("failed to parse ipfs:// URL")
 	}
@@ -93,7 +93,7 @@ func (l *BibEntryLocation) IpfsUrl() *url.URL {
 func (l *BibEntryLocation) GatewayUrl(gateway string) (*url.URL, error) {
 	switch l.FileCid.Version() {
 	case 0:
-		return url.Parse(fmt.Sprintf("https://%s/ipfs/%s?filename=%s", gateway, l.FileCid.String(), url.QueryEscape(l.FileName)))
+		return url.Parse(fmt.Sprintf("https://%s/ipfs/%s/?filename=%s", gateway, l.FileCid.String(), url.QueryEscape(l.FileName)))
 	default:
 		return url.Parse(fmt.Sprintf("https://%s.ipfs.%s/?filename=%s", l.FileCid.String(), gateway, url.QueryEscape(l.FileName)))
 	}

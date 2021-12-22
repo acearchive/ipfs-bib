@@ -9,6 +9,8 @@ import (
 	"github.com/frawleyskid/ipfs-bib/config"
 )
 
+var DefaultCidPrefix = dag.V1CidPrefix()
+
 type SourceStore struct {
 	service   ipld.DAGService
 	directory unixfs.Directory
@@ -16,6 +18,7 @@ type SourceStore struct {
 
 func NewSourceStore(ctx context.Context, service ipld.DAGService) (*SourceStore, error) {
 	directory := unixfs.NewDirectory(service)
+	directory.SetCidBuilder(DefaultCidPrefix)
 
 	dirNode, err := directory.GetNode()
 	if err != nil {
@@ -49,6 +52,7 @@ func (s *SourceStore) AddSource(ctx context.Context, source *config.BibSource) (
 	}
 
 	sourceDirectory := unixfs.NewDirectory(s.service)
+	sourceDirectory.SetCidBuilder(DefaultCidPrefix)
 
 	if err := sourceDirectory.AddChild(ctx, source.FileName, contentNode); err != nil {
 		return nil, err
