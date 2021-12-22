@@ -35,11 +35,6 @@
     # .Type - The bibtex entry type (e.g. article)
     # .Fields - A map of fields that appear in the bibtex entry
     directory-name = "{{ .CiteName }}"
-    
-    # By default, the archived source files in IPFS are each put in their own
-    # directory. Wrapping the source files in directories can be disabled using
-    # this option. If this is false, `directory-name` is ignored.
-    wrap-sources = true
 
     # If the source URL points to a web page, the tool can search for embedded
     # documents in the page. This is a list of the media types (MIME types) of

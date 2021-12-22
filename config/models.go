@@ -10,7 +10,6 @@ type Ipfs struct {
 type Archive struct {
 	FileName      string   `mapstructure:"file-name"`
 	DirectoryName string   `mapstructure:"directory-name"`
-	WrapSources   bool     `mapstructure:"wrap-sources"`
 	EmbeddedTypes []string `mapstructure:"embedded-types"`
 	ExcludedTypes []string `mapstructure:"excluded-types"`
 }
