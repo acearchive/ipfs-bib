@@ -39,19 +39,21 @@ func LocateEntry(entry *bibtex.BibEntry) (*SourceLocator, error) {
 	)
 
 	if rawDoi := entryField(entry, "doi"); rawDoi != nil {
+		doi := *rawDoi
+
 		for _, doiPrefix := range DoiPrefixes {
 			if strings.HasPrefix(*rawDoi, doiPrefix) {
-				doi := strings.TrimPrefix(*rawDoi, doiPrefix)
-				sourceDoi = &doi
-
-				sourceUrl, err = url.Parse(CanonicalDoiPrefix + doi)
-				if err != nil {
-					return nil, err
-				}
-
+				doi = strings.TrimPrefix(*rawDoi, doiPrefix)
 				break
 			}
 		}
+
+		sourceUrl, err = url.Parse(CanonicalDoiPrefix + doi)
+		if err != nil {
+			return nil, err
+		}
+
+		sourceDoi = &doi
 	}
 
 	if rawUrl := entryField(entry, "url"); rawUrl != nil {
