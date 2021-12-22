@@ -60,7 +60,7 @@ func (n *NoOpHandler) Handle(_ context.Context, _ *DownloadResponse) (*SourceCon
 func FromConfig(cfg *config.Config) DownloadHandler {
 	return MultiHandler{
 		NewEmbeddedHandler(cfg.Archive.EmbeddedTypes),
-		NewMonolithHandler(&cfg.Snapshot),
+		NewMonolithHandler(cfg),
 		&PassthroughHandler{},
 	}
 }

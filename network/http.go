@@ -11,14 +11,25 @@ import (
 	"time"
 )
 
-const DefaultTimeout time.Duration = 1000 * 1000 * 1000 * 15
+const (
+	DefaultTimeout  time.Duration = 1000 * 1000 * 1000 * 15
+	UserAgentHeader string        = "User-Agent"
+)
 
-var DefaultClient = HttpClient{http.Client{
+var defaultClient = http.Client{
 	Timeout: DefaultTimeout,
-}}
+}
+
+func NewClient(userAgent string) *HttpClient {
+	return &HttpClient{
+		client:    &defaultClient,
+		userAgent: userAgent,
+	}
+}
 
 type HttpClient struct {
-	http.Client
+	client    *http.Client
+	userAgent string
 }
 
 func (c *HttpClient) Request(ctx context.Context, method string, requestUrl *url.URL) (*http.Response, error) {
@@ -27,7 +38,9 @@ func (c *HttpClient) Request(ctx context.Context, method string, requestUrl *url
 		return nil, err
 	}
 
-	response, err := c.Do(request)
+	request.Header.Set(UserAgentHeader, c.userAgent)
+
+	response, err := c.client.Do(request)
 	if err != nil {
 		return nil, err
 	}
@@ -42,7 +55,7 @@ func (c *HttpClient) Request(ctx context.Context, method string, requestUrl *url
 func (c *HttpClient) ResolveRedirect(ctx context.Context, sourceUrl *url.URL) (*url.URL, error) {
 	redirectedUrl := sourceUrl
 
-	c.CheckRedirect = func(request *http.Request, _ []*http.Request) error {
+	c.client.CheckRedirect = func(request *http.Request, _ []*http.Request) error {
 		redirectedUrl = request.URL
 
 		return nil
@@ -53,7 +66,7 @@ func (c *HttpClient) ResolveRedirect(ctx context.Context, sourceUrl *url.URL) (*
 		return nil, err
 	}
 
-	c.CheckRedirect = nil
+	c.client.CheckRedirect = nil
 
 	return redirectedUrl, nil
 }

@@ -24,13 +24,13 @@ func (NoOpResolver) Resolve(_ context.Context, _ *config.SourceLocator) (*url.UR
 }
 
 func FromConfig(cfg *config.Config) (SourceResolver, error) {
-	userResolver, err := NewUserResolver(&network.DefaultClient, cfg.Resolvers)
+	userResolver, err := NewUserResolver(network.NewClient(cfg.Archive.UserAgent), cfg.Resolvers)
 	if err != nil {
 		return nil, err
 	}
 
 	return &MultiResolver{
-		NewUnpaywallResolver(&network.DefaultClient, cfg.Unpaywall.Email),
+		NewUnpaywallResolver(network.NewClient(cfg.Archive.UserAgent), cfg.Unpaywall.Email),
 		userResolver,
 		PassthroughResolver{},
 	}, nil

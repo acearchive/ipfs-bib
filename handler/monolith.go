@@ -12,43 +12,43 @@ type MonolithHandler struct {
 	args []string
 }
 
-func NewMonolithHandler(cfg *config.Snapshot) DownloadHandler {
-	if !cfg.Enabled {
+func NewMonolithHandler(cfg *config.Config) DownloadHandler {
+	if !cfg.Snapshot.Enabled {
 		return &NoOpHandler{}
 	}
 
-	var args []string
+	args := []string{"--user-agent", cfg.Archive.UserAgent}
 
 	switch {
-	case cfg.AllowInsecure:
+	case cfg.Snapshot.AllowInsecure:
 		args = append(args, "--insecure")
 		fallthrough
-	case !cfg.IncludeAudio:
+	case !cfg.Snapshot.IncludeAudio:
 		args = append(args, "--no-audio")
 		fallthrough
-	case !cfg.IncludeCss:
+	case !cfg.Snapshot.IncludeCss:
 		args = append(args, "--no-css")
 		fallthrough
-	case !cfg.IncludeFonts:
+	case !cfg.Snapshot.IncludeFonts:
 		args = append(args, "--no-fonts")
 		fallthrough
-	case !cfg.IncludeFrames:
+	case !cfg.Snapshot.IncludeFrames:
 		args = append(args, "--no-frames")
 		fallthrough
-	case !cfg.IncludeImages:
+	case !cfg.Snapshot.IncludeImages:
 		args = append(args, "--no-images")
 		fallthrough
-	case !cfg.IncludeJs:
+	case !cfg.Snapshot.IncludeJs:
 		args = append(args, "--no-js")
 		fallthrough
-	case !cfg.IncludeVideo:
+	case !cfg.Snapshot.IncludeVideo:
 		args = append(args, "--no-video")
 		fallthrough
-	case !cfg.IncludeMetadata:
+	case !cfg.Snapshot.IncludeMetadata:
 		args = append(args, "--no-metadata")
 	}
 
-	return &MonolithHandler{path: cfg.Path, args: args}
+	return &MonolithHandler{path: cfg.Snapshot.Path, args: args}
 }
 
 func (s *MonolithHandler) Handle(_ context.Context, response *DownloadResponse) (*SourceContent, error) {

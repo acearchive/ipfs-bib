@@ -12,6 +12,7 @@ type Archive struct {
 	DirectoryName string   `mapstructure:"directory-name"`
 	EmbeddedTypes []string `mapstructure:"embedded-types"`
 	ExcludedTypes []string `mapstructure:"excluded-types"`
+	UserAgent     string   `mapstructure:"user-agent"`
 }
 
 type Unpaywall struct {

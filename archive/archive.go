@@ -38,7 +38,7 @@ type BibContents struct {
 }
 
 func Download(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*BibContents, error) {
-	client := NewClient(&network.DefaultClient)
+	client := NewClient(network.NewClient(cfg.Archive.UserAgent))
 
 	downloadHandler := handler.FromConfig(cfg)
 
