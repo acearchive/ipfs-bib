@@ -42,9 +42,21 @@ type DownloadHandler interface {
 	Handle(ctx context.Context, response *DownloadResponse) (*SourceContent, error)
 }
 
-type PassthroughHandler struct{}
+type DirectHandler struct {
+	excludeTypes []string
+}
 
-func (s *PassthroughHandler) Handle(_ context.Context, response *DownloadResponse) (*SourceContent, error) {
+func NewDirectHandler(excludeTypes []string) *DirectHandler {
+	return &DirectHandler{excludeTypes}
+}
+
+func (s *DirectHandler) Handle(_ context.Context, response *DownloadResponse) (*SourceContent, error) {
+	for _, mediaType := range s.excludeTypes {
+		if response.MediaType() == mediaType {
+			return nil, nil
+		}
+	}
+
 	return &SourceContent{
 		Content:   response.Body,
 		MediaType: response.MediaType(),
@@ -58,9 +70,16 @@ func (n *NoOpHandler) Handle(_ context.Context, _ *DownloadResponse) (*SourceCon
 }
 
 func FromConfig(cfg *config.Config) DownloadHandler {
+	var excludeTypes []string
+
+	if !cfg.Snapshot.Enabled {
+		// If taking snapshots is disabled, don't attempt to download HTML documents.
+		excludeTypes = []string{"text/html"}
+	}
+
 	return MultiHandler{
 		NewEmbeddedHandler(cfg.Archive.EmbeddedTypes),
 		NewMonolithHandler(cfg),
-		&PassthroughHandler{},
+		NewDirectHandler(excludeTypes),
 	}
 }

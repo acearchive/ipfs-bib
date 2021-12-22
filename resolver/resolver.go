@@ -11,9 +11,9 @@ type SourceResolver interface {
 	Resolve(ctx context.Context, locator *config.SourceLocator) (*url.URL, error)
 }
 
-type PassthroughResolver struct{}
+type DirectResolver struct{}
 
-func (PassthroughResolver) Resolve(_ context.Context, locator *config.SourceLocator) (*url.URL, error) {
+func (DirectResolver) Resolve(_ context.Context, locator *config.SourceLocator) (*url.URL, error) {
 	return &locator.Url, nil
 }
 
@@ -32,6 +32,6 @@ func FromConfig(cfg *config.Config) (SourceResolver, error) {
 	return &MultiResolver{
 		NewUnpaywallResolver(network.NewClient(cfg.Archive.UserAgent), cfg),
 		userResolver,
-		PassthroughResolver{},
+		DirectResolver{},
 	}, nil
 }

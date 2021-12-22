@@ -59,6 +59,8 @@ func Download(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*Bib
 		content, err := client.Download(ctx, locator, downloadHandler, sourceResolver)
 		if err != nil {
 			return nil, err
+		} else if content == nil {
+			continue
 		}
 
 		contentMap[BibCiteName(bibEntry.CiteName)] = *content
