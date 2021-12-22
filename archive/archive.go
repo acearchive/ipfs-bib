@@ -84,8 +84,8 @@ func storeContents(ctx context.Context, cfg *config.Config, contents *BibContent
 
 	locationMap := make(map[BibCiteName]config.BibEntryLocation)
 
-	for entryId, source := range contents.Sources {
-		bibEntry := contents.Entries[entryId]
+	for citeName, source := range contents.Sources {
+		bibEntry := contents.Entries[citeName]
 
 		sourcePath, err := sourcePathTemplate.Execute(&bibEntry, source.MediaType)
 		if err != nil {
@@ -103,7 +103,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents *BibContent
 			return nil, err
 		}
 
-		locationMap[entryId] = *entryLocation
+		locationMap[citeName] = *entryLocation
 	}
 
 	rootCid, err := sourceStore.Write(ctx)

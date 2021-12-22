@@ -19,8 +19,8 @@
     # provided by the sprig library are available in the template. The
     # following fields are available in the template:
     #
-    # .Key - The bibtex entry ID
-    # .Type - The bibtex entry type (e.g. "article")
+    # .CiteName - The bibtex entry cite name (e.g. aspelmeyer_measured_2009)
+    # .Type - The bibtex entry type (e.g. article)
     # .Fields - A map of fields that appear in the bibtex entry
     # .Extension - A file extension based on the media type (MIME type), including the leading dot
     file-name = "source{{ .Extension }}"
@@ -31,10 +31,10 @@
     # Functions provided by the sprig library are available in the template.
     # The following fields are available in the template:
     #
-    # .Key - The bibtex entry ID
-    # .Type - The bibtex entry type (e.g. "article")
+    # .CiteName - The bibtex entry cite name (e.g. aspelmeyer_measured_2009)
+    # .Type - The bibtex entry type (e.g. article)
     # .Fields - A map of fields that appear in the bibtex entry
-    directory-name = "{{ .Key }}"
+    directory-name = "{{ .CiteName }}"
     
     # By default, the archived source files in IPFS are each put in their own
     # directory. Wrapping the source files in directories can be disabled using
