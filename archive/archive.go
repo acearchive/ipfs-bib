@@ -9,28 +9,9 @@ import (
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/frawleyskid/ipfs-bib/store"
 	"github.com/nickng/bibtex"
-	"os"
 )
 
 type BibCiteName string
-
-func ParseBibtex(bibPath string) (*bibtex.BibTex, error) {
-	bibFile, err := os.Open(bibPath)
-	if err != nil {
-		return nil, err
-	}
-
-	bib, err := bibtex.Parse(bibFile)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := bibFile.Close(); err != nil {
-		return nil, err
-	}
-
-	return bib, nil
-}
 
 type BibContents struct {
 	Entries map[BibCiteName]bibtex.BibEntry
@@ -56,10 +37,28 @@ func Download(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*Bib
 			return nil, err
 		}
 
-		content, err := client.Download(ctx, locator, downloadHandler, sourceResolver)
+		var content *handler.SourceContent
+
+		content, err = ReadLocalBibSource(bibEntry, preferredLocalMediaTypes)
 		if err != nil {
 			return nil, err
-		} else if content == nil {
+		}
+
+		if content == nil {
+			content, err = client.Download(ctx, locator, downloadHandler, sourceResolver)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if content == nil {
+			content, err = ReadLocalBibSource(bibEntry, contingencyLocalMediaTypes)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if content == nil {
 			continue
 		}
 
@@ -165,30 +164,4 @@ func ToNode(ctx context.Context, cfg *config.Config, pin bool, contents *BibCont
 	}
 
 	return location, nil
-}
-
-func UpdateBib(bib *bibtex.BibTex, gateway *string, location *Location) error {
-	for _, entry := range bib.Entries {
-		entryLocation, ok := location.Entries[BibCiteName(entry.CiteName)]
-		if !ok {
-			continue
-		}
-
-		if gateway == nil {
-			entry.Fields["url"] = bibtex.NewBibConst(entryLocation.IpfsUrl().String())
-		} else {
-			gatewayUrl, err := entryLocation.GatewayUrl(*gateway)
-			if err != nil {
-				return err
-			}
-
-			entry.Fields["url"] = bibtex.NewBibConst(gatewayUrl.String())
-		}
-	}
-
-	return nil
-}
-
-func WriteBib(bib *bibtex.BibTex, file string) error {
-	return os.WriteFile(file, []byte(bib.PrettyString()), 0644)
 }

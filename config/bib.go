@@ -22,7 +22,7 @@ type SourceLocator struct {
 	Doi *string
 }
 
-func entryField(entry *bibtex.BibEntry, field string) *string {
+func BibEntryField(entry *bibtex.BibEntry, field string) *string {
 	if value, ok := entry.Fields[field]; ok {
 		stringValue := value.String()
 		return &stringValue
@@ -38,7 +38,7 @@ func LocateEntry(entry *bibtex.BibEntry) (*SourceLocator, error) {
 		err       error
 	)
 
-	if rawDoi := entryField(entry, "doi"); rawDoi != nil {
+	if rawDoi := BibEntryField(entry, "doi"); rawDoi != nil {
 		doi := *rawDoi
 
 		for _, doiPrefix := range DoiPrefixes {
@@ -56,7 +56,7 @@ func LocateEntry(entry *bibtex.BibEntry) (*SourceLocator, error) {
 		sourceDoi = &doi
 	}
 
-	if rawUrl := entryField(entry, "url"); rawUrl != nil {
+	if rawUrl := BibEntryField(entry, "url"); rawUrl != nil {
 		sourceUrl, err = url.Parse(*rawUrl)
 		if err != nil {
 			return nil, err
