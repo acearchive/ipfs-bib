@@ -14,6 +14,11 @@ type Archive struct {
 	ExcludedTypes []string `mapstructure:"excluded-types"`
 }
 
+type Unpaywall struct {
+	Enabled bool   `mapstructure:"enabled"`
+	Email   string `mapstructure:"email"`
+}
+
 type Snapshot struct {
 	Enabled         bool   `mapstructure:"enabled"`
 	Path            string `mapstructure:"path"`
@@ -37,6 +42,7 @@ type Resolver struct {
 type Config struct {
 	Ipfs      Ipfs       `mapstructure:"ipfs"`
 	Archive   Archive    `mapstructure:"archive"`
+	Unpaywall Unpaywall  `mapstructure:"unpaywall"`
 	Snapshot  Snapshot   `mapstructure:"snapshot"`
 	Resolvers []Resolver `mapstructure:"resolvers"`
 }

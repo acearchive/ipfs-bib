@@ -2,8 +2,10 @@ package network
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -68,6 +70,24 @@ func (c *HttpClient) CheckExists(ctx context.Context, sourceUrl *url.URL) (bool,
 	}
 
 	return true, nil
+}
+
+func (c *HttpClient) UnmarshalJson(ctx context.Context, method string, requestUrl *url.URL, value interface{}) error {
+	response, err := c.Request(ctx, method, requestUrl)
+	if err != nil {
+		return err
+	}
+
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		return err
+	}
+
+	if err := response.Body.Close(); err != nil {
+		return err
+	}
+
+	return json.Unmarshal(responseBody, value)
 }
 
 type ErrHttpNotOk struct {

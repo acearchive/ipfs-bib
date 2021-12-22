@@ -48,6 +48,15 @@
     # archive.
     excluded-types = []
 
+# Find open access content on Unpaywall.
+[unpaywall]
+    # Enable searching for open access content on Unpaywall.
+    enabled = true
+
+    # Unpaywall requires an email address be included in API requests. This is
+    # the email that will be used in requests to the Unpaywall API.
+    email = "unpaywall@impactstory.org"
+
 # Take snapshots of web pages using monolith.
 [snapshot]
     # Enable taking snapshots of web pages using monolith.
