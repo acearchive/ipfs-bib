@@ -45,7 +45,10 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceL
 		return nil, nil
 	}
 
-	bestLocation := bestLocationJson.(map[string]interface{})
+	bestLocation, ok := bestLocationJson.(map[string]interface{})
+	if !ok {
+		return nil, nil
+	}
 
 	rawResolvedUrl, ok := bestLocation["url"]
 	if !ok {
