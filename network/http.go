@@ -33,12 +33,20 @@ type HttpClient struct {
 }
 
 func (c *HttpClient) Request(ctx context.Context, method string, requestUrl *url.URL) (*http.Response, error) {
+	return c.RequestWithHeaders(ctx, method, requestUrl, nil)
+}
+
+func (c *HttpClient) RequestWithHeaders(ctx context.Context, method string, requestUrl *url.URL, headers map[string]string) (*http.Response, error) {
 	request, err := http.NewRequestWithContext(ctx, method, requestUrl.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
 	request.Header.Set(UserAgentHeader, c.userAgent)
+
+	for headerName, headerValue := range headers {
+		request.Header.Set(headerName, headerValue)
+	}
 
 	response, err := c.client.Do(request)
 	if err != nil {
@@ -51,7 +59,6 @@ func (c *HttpClient) Request(ctx context.Context, method string, requestUrl *url
 
 	return response, nil
 }
-
 func (c *HttpClient) ResolveRedirect(ctx context.Context, sourceUrl *url.URL) (*url.URL, error) {
 	redirectedUrl := sourceUrl
 
@@ -85,12 +92,25 @@ func (c *HttpClient) CheckExists(ctx context.Context, sourceUrl *url.URL) (bool,
 	return true, nil
 }
 
-func (c *HttpClient) UnmarshalJson(ctx context.Context, method string, requestUrl *url.URL, value interface{}) error {
-	response, err := c.Request(ctx, method, requestUrl)
+func (c *HttpClient) Download(ctx context.Context, sourceUrl *url.URL) ([]byte, error) {
+	response, err := c.Request(ctx, http.MethodGet, sourceUrl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	responseBody, err := io.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := response.Body.Close(); err != nil {
+		return nil, err
+	}
+
+	return responseBody, nil
+}
+
+func UnmarshalJson(response *http.Response, value interface{}) error {
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
 		return err

@@ -16,8 +16,8 @@ const (
 )
 
 var (
-	preferredLocalMediaTypes   = []string{"application/pdf"}
-	contingencyLocalMediaTypes = []string{"text/html"}
+	preferredMediaTypes   = []string{"application/pdf"}
+	contingencyMediaTypes = []string{"text/html"}
 )
 
 func ParseBibtex(bibPath string) (*bibtex.BibTex, error) {

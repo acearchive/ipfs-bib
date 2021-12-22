@@ -5,8 +5,6 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/handler"
-	"github.com/frawleyskid/ipfs-bib/network"
-	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/frawleyskid/ipfs-bib/store"
 	"github.com/nickng/bibtex"
 )
@@ -18,58 +16,14 @@ type BibContents struct {
 	Sources map[BibCiteName]handler.SourceContent
 }
 
-func Download(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*BibContents, error) {
-	client := NewClient(network.NewClient(cfg.Archive.UserAgent))
+func (c *BibContents) ToBibtex() *bibtex.BibTex {
+	bib := bibtex.NewBibTex()
 
-	downloadHandler := handler.FromConfig(cfg)
-
-	sourceResolver, err := resolver.FromConfig(cfg)
-	if err != nil {
-		return nil, err
+	for _, bibEntry := range c.Entries {
+		bib.Entries = append(bib.Entries, &bibEntry)
 	}
 
-	contentMap := make(map[BibCiteName]handler.SourceContent)
-	entryMap := make(map[BibCiteName]bibtex.BibEntry)
-
-	for _, bibEntry := range bib.Entries {
-		locator, err := config.LocateEntry(bibEntry)
-		if err != nil {
-			return nil, err
-		}
-
-		var content *handler.SourceContent
-
-		content, err = ReadLocalBibSource(bibEntry, preferredLocalMediaTypes)
-		if err != nil {
-			return nil, err
-		}
-
-		if content == nil {
-			content, err = client.Download(ctx, locator, downloadHandler, sourceResolver)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if content == nil {
-			content, err = ReadLocalBibSource(bibEntry, contingencyLocalMediaTypes)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if content == nil {
-			continue
-		}
-
-		contentMap[BibCiteName(bibEntry.CiteName)] = *content
-		entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
-	}
-
-	return &BibContents{
-		Sources: contentMap,
-		Entries: entryMap,
-	}, nil
+	return bib
 }
 
 type Location struct {

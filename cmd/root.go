@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/frawleyskid/ipfs-bib/archive"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/nickng/bibtex"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -17,6 +18,7 @@ var (
 	carPath    string
 	pinSources bool
 	jsonOutput bool
+	useZotero  bool
 
 	rootCmd = &cobra.Command{
 		Use:                   "ipfs-bib [options] <bibtex_file>",
@@ -44,14 +46,28 @@ var (
 				}
 			}
 
-			bib, err := archive.ParseBibtex(args[0])
-			if err != nil {
-				return err
-			}
+			var (
+				bib      *bibtex.BibTex
+				contents *archive.BibContents
+			)
 
-			contents, err := archive.Download(ctx, cfg, bib)
-			if err != nil {
-				return err
+			if useZotero {
+				contents, err = archive.FromZotero(ctx, cfg, args[0])
+				if err != nil {
+					return err
+				}
+
+				bib = contents.ToBibtex()
+			} else {
+				bib, err = archive.ParseBibtex(args[0])
+				if err != nil {
+					return err
+				}
+
+				contents, err = archive.FromBibtex(ctx, cfg, bib)
+				if err != nil {
+					return err
+				}
 			}
 
 			var location *archive.Location
@@ -119,4 +135,5 @@ func init() {
 	rootCmd.Flags().StringVar(&carPath, "car", "", "Rather than add the sources to an IPFS node, export them as a CAR archive.")
 	rootCmd.Flags().BoolVar(&pinSources, "pin", false, "Pin the source files when adding them to the IPFS node.")
 	rootCmd.Flags().BoolVar(&jsonOutput, "json", false, "Produce machine-readable JSON output.")
+	rootCmd.Flags().BoolVar(&useZotero, "zotero", false, "Pull references from a public Zotero library. Instead of the path of a local bibtex file, pass a Zotero group ID.")
 }

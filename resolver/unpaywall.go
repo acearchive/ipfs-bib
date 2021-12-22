@@ -36,7 +36,12 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceL
 
 	var jsonResponse map[string]interface{}
 
-	if err := u.httpClient.UnmarshalJson(ctx, http.MethodGet, requestUrl, &jsonResponse); err != nil {
+	response, err := u.httpClient.Request(ctx, http.MethodGet, requestUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := network.UnmarshalJson(response, &jsonResponse); err != nil {
 		return nil, err
 	}
 

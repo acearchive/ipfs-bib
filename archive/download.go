@@ -6,19 +6,20 @@ import (
 	"github.com/frawleyskid/ipfs-bib/handler"
 	"github.com/frawleyskid/ipfs-bib/network"
 	"github.com/frawleyskid/ipfs-bib/resolver"
+	"github.com/nickng/bibtex"
 	"io"
 	"net/http"
 )
 
-type Client struct {
+type DownloadClient struct {
 	httpClient *network.HttpClient
 }
 
-func NewClient(httpClient *network.HttpClient) *Client {
-	return &Client{httpClient}
+func NewDownloadClient(httpClient *network.HttpClient) *DownloadClient {
+	return &DownloadClient{httpClient}
 }
 
-func (c Client) Download(ctx context.Context, locator *config.SourceLocator, downloadHandler handler.DownloadHandler, sourceResolver resolver.SourceResolver) (*handler.SourceContent, error) {
+func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLocator, downloadHandler handler.DownloadHandler, sourceResolver resolver.SourceResolver) (*handler.SourceContent, error) {
 	redirectedUrl, err := c.httpClient.ResolveRedirect(ctx, &locator.Url)
 	if err != nil {
 		return nil, err
@@ -60,4 +61,58 @@ func (c Client) Download(ctx context.Context, locator *config.SourceLocator, dow
 	}
 
 	return content, nil
+}
+
+func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*BibContents, error) {
+	client := NewDownloadClient(network.NewClient(cfg.Archive.UserAgent))
+
+	downloadHandler := handler.FromConfig(cfg)
+
+	sourceResolver, err := resolver.FromConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	contentMap := make(map[BibCiteName]handler.SourceContent)
+	entryMap := make(map[BibCiteName]bibtex.BibEntry)
+
+	for _, bibEntry := range bib.Entries {
+		locator, err := config.LocateEntry(bibEntry)
+		if err != nil {
+			return nil, err
+		}
+
+		var content *handler.SourceContent
+
+		content, err = ReadLocalBibSource(bibEntry, preferredMediaTypes)
+		if err != nil {
+			return nil, err
+		}
+
+		if content == nil {
+			content, err = client.Download(ctx, locator, downloadHandler, sourceResolver)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if content == nil {
+			content, err = ReadLocalBibSource(bibEntry, contingencyMediaTypes)
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if content == nil {
+			continue
+		}
+
+		contentMap[BibCiteName(bibEntry.CiteName)] = *content
+		entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
+	}
+
+	return &BibContents{
+		Sources: contentMap,
+		Entries: entryMap,
+	}, nil
 }
