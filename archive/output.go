@@ -1,10 +1,10 @@
 package archive
 
 import (
-	"github.com/ipfs/go-cid"
 	"github.com/frawleyskid/ipfs-bib/config"
-	"net/url"
 )
+
+const OutputIndent = "  "
 
 func (l *Location) ToOutput(cfg *config.Config) (*Output, error) {
 	entries := make([]EntryOutput, 0, len(l.Entries))
@@ -16,33 +16,33 @@ func (l *Location) ToOutput(cfg *config.Config) (*Output, error) {
 		}
 
 		entries = append(entries, EntryOutput{
-			CiteName:      citeName,
-			FileCid:       entry.FileCid,
+			CiteName:      string(citeName),
+			FileCid:       entry.FileCid.String(),
 			FileName:      entry.FileName,
-			DirectoryCid:  entry.DirectoryCid,
+			DirectoryCid:  entry.DirectoryCid.String(),
 			DirectoryName: entry.DirectoryName,
-			IpfsUrl:       *entry.IpfsUrl(),
-			GatewayUrl:    *gatewayUrl,
+			IpfsUrl:       entry.IpfsUrl().String(),
+			GatewayUrl:    gatewayUrl.String(),
 		})
 	}
 
 	return &Output{
-		Cid:     l.Root,
+		Cid:     l.Root.String(),
 		Entries: entries,
 	}, nil
 }
 
 type EntryOutput struct {
-	CiteName      BibCiteName `json:"citeName"`
-	FileCid       cid.Cid     `json:"fileCid"`
-	FileName      string      `json:"fileName"`
-	DirectoryCid  cid.Cid     `json:"directoryCid"`
-	DirectoryName string      `json:"directoryName"`
-	IpfsUrl       url.URL     `json:"ipfsUrl"`
-	GatewayUrl    url.URL     `json:"gatewayUrl"`
+	CiteName      string `json:"citeName"`
+	FileCid       string `json:"fileCid"`
+	FileName      string `json:"fileName"`
+	DirectoryCid  string `json:"directoryCid"`
+	DirectoryName string `json:"directoryName"`
+	IpfsUrl       string `json:"ipfsUrl"`
+	GatewayUrl    string `json:"gatewayUrl"`
 }
 
 type Output struct {
-	Cid     cid.Cid       `json:"cid"`
+	Cid     string        `json:"cid"`
 	Entries []EntryOutput `json:"entries"`
 }

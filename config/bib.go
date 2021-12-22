@@ -95,6 +95,6 @@ func (l *BibEntryLocation) GatewayUrl(gateway string) (*url.URL, error) {
 	case 0:
 		return url.Parse(fmt.Sprintf("https://%s/ipfs/%s?filename=%s", gateway, l.FileCid.String(), url.QueryEscape(l.FileName)))
 	default:
-		return url.Parse(fmt.Sprintf("https://%s.ipfs.%s/?=%s", l.FileCid.String(), gateway, url.QueryEscape(l.FileName)))
+		return url.Parse(fmt.Sprintf("https://%s.ipfs.%s/?filename=%s", l.FileCid.String(), gateway, url.QueryEscape(l.FileName)))
 	}
 }

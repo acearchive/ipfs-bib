@@ -90,7 +90,7 @@ var (
 					return err
 				}
 
-				marshalledOutput, err := json.Marshal(output)
+				marshalledOutput, err := json.MarshalIndent(output, "", archive.OutputIndent)
 				if err != nil {
 					return err
 				}
