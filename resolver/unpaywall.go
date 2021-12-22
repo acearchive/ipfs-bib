@@ -14,12 +14,12 @@ type UnpaywallResolver struct {
 	auth       string
 }
 
-func NewUnpaywallResolver(httpClient *network.HttpClient, auth string) SourceResolver {
-	if auth == "" {
+func NewUnpaywallResolver(httpClient *network.HttpClient, cfg *config.Config) SourceResolver {
+	if !cfg.Unpaywall.Enabled || cfg.Unpaywall.Email == "" {
 		return &NoOpResolver{}
 	}
 
-	return &UnpaywallResolver{httpClient, auth}
+	return &UnpaywallResolver{httpClient, cfg.Unpaywall.Email}
 }
 
 func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceLocator) (*url.URL, error) {

@@ -30,7 +30,7 @@ func FromConfig(cfg *config.Config) (SourceResolver, error) {
 	}
 
 	return &MultiResolver{
-		NewUnpaywallResolver(network.NewClient(cfg.Archive.UserAgent), cfg.Unpaywall.Email),
+		NewUnpaywallResolver(network.NewClient(cfg.Archive.UserAgent), cfg),
 		userResolver,
 		PassthroughResolver{},
 	}, nil
