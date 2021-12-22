@@ -1,62 +1,43 @@
 package config
 
-import (
-	"github.com/pelletier/go-toml"
-	"os"
-)
-
 type Ipfs struct {
-	Api        string `toml:"api" default:"/ip4/127.0.0.1/tcp/5001"`
-	UseGateway bool   `toml:"use-gateway" default:"true"`
-	Gateway    string `toml:"gateway" default:"dweb.link"`
-	CarVersion string `toml:"car-version" default:"1"`
+	Api        string `mapstructure:"api"`
+	UseGateway bool   `mapstructure:"use-gateway"`
+	Gateway    string `mapstructure:"gateway"`
+	CarVersion string `mapstructure:"car-version"`
 }
 
 type Archive struct {
-	FileName      string   `toml:"file-name" default:"source{{ .Extension }}"`
-	DirectoryName string   `toml:"directory-name" default:"{{ coalesce (get .Fields \"doi\") .Key }}"`
-	WrapSources   bool     `toml:"wrap-sources" default:"true"`
-	EmbeddedTypes []string `toml:"embedded-types"`
-	ExcludedTypes []string `toml:"excluded-types"`
+	FileName      string   `mapstructure:"file-name"`
+	DirectoryName string   `mapstructure:"directory-name"`
+	WrapSources   bool     `mapstructure:"wrap-sources"`
+	EmbeddedTypes []string `mapstructure:"embedded-types"`
+	ExcludedTypes []string `mapstructure:"excluded-types"`
 }
 
 type Snapshot struct {
-	Enabled         bool   `toml:"enabled" default:"true"`
-	Path            string `toml:"path" default:"monolith"`
-	AllowInsecure   bool   `toml:"allow-insecure" default:"false"`
-	IncludeAudio    bool   `toml:"include-audio" default:"true"`
-	IncludeCss      bool   `toml:"include-css" default:"true"`
-	IncludeFonts    bool   `toml:"include-fonts" default:"true"`
-	IncludeFrames   bool   `toml:"include-frames" default:"true"`
-	IncludeImages   bool   `toml:"include-images" default:"true"`
-	IncludeJs       bool   `toml:"include-js" default:"true"`
-	IncludeVideo    bool   `toml:"include-video" default:"true"`
-	IncludeMetadata bool   `toml:"include-metadata" default:"true"`
+	Enabled         bool   `mapstructure:"enabled"`
+	Path            string `mapstructure:"path"`
+	AllowInsecure   bool   `mapstructure:"allow-insecure"`
+	IncludeAudio    bool   `mapstructure:"include-audio"`
+	IncludeCss      bool   `mapstructure:"include-css"`
+	IncludeFonts    bool   `mapstructure:"include-fonts"`
+	IncludeFrames   bool   `mapstructure:"include-frames"`
+	IncludeImages   bool   `mapstructure:"include-images"`
+	IncludeJs       bool   `mapstructure:"include-js"`
+	IncludeVideo    bool   `mapstructure:"include-video"`
+	IncludeMetadata bool   `mapstructure:"include-metadata"`
 }
 
 type Resolver struct {
-	Schemes          []string `toml:"schemes"`
-	IncludeHostnames []string `toml:"include-hostnames"`
-	ExcludeHostnames []string `toml:"exclude-hostnames"`
+	Schemes          []string `mapstructure:"schemes"`
+	IncludeHostnames []string `mapstructure:"include-hostnames"`
+	ExcludeHostnames []string `mapstructure:"exclude-hostnames"`
 }
 
 type Config struct {
-	Ipfs      Ipfs       `toml:"ipfs"`
-	Archive   Archive    `toml:"archive"`
-	Snapshot  Snapshot   `toml:"snapshot"`
-	Resolvers []Resolver `toml:"resolvers"`
-}
-
-func FromToml(file string) (*Config, error) {
-	configBytes, err := os.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-
-	config := Config{}
-	if err := toml.Unmarshal(configBytes, &config); err != nil {
-		return nil, err
-	}
-
-	return &config, nil
+	Ipfs      Ipfs       `mapstructure:"ipfs"`
+	Archive   Archive    `mapstructure:"archive"`
+	Snapshot  Snapshot   `mapstructure:"snapshot"`
+	Resolvers []Resolver `mapstructure:"resolvers"`
 }
