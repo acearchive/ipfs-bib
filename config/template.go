@@ -2,6 +2,7 @@ package config
 
 import (
 	"bytes"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/nickng/bibtex"
 	"mime"
 	"path"
@@ -20,12 +21,12 @@ type SourcePathTemplate struct {
 }
 
 func NewSourcePathTemplate(cfg *Config) (*SourcePathTemplate, error) {
-	filename, err := template.New("/archive/file-name").Parse(cfg.Archive.FileName)
+	filename, err := template.New("archive.file-name").Funcs(sprig.TxtFuncMap()).Parse(cfg.Archive.FileName)
 	if err != nil {
 		return nil, err
 	}
 
-	directory, err := template.New("/archive/directory-name").Parse(cfg.Archive.FileName)
+	directory, err := template.New("archive.directory-name").Funcs(sprig.TxtFuncMap()).Parse(cfg.Archive.DirectoryName)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +62,7 @@ func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, mediaType string) (
 type fileNameTemplateInput struct {
 	Key       string
 	Type      string
-	Fields    map[string]string
+	Fields    map[string]interface{}
 	Extension string
 }
 
@@ -87,7 +88,7 @@ func newFileNameTemplateInput(entry *bibtex.BibEntry, mediaType string) (*fileNa
 	input := fileNameTemplateInput{
 		Key:       entry.CiteName,
 		Type:      entry.Type,
-		Fields:    make(map[string]string),
+		Fields:    make(map[string]interface{}),
 		Extension: extension,
 	}
 
@@ -101,14 +102,14 @@ func newFileNameTemplateInput(entry *bibtex.BibEntry, mediaType string) (*fileNa
 type directoryNameTemplateInput struct {
 	Key    string
 	Type   string
-	Fields map[string]string
+	Fields map[string]interface{}
 }
 
 func newDirectoryNameTemplateInput(entry *bibtex.BibEntry) *directoryNameTemplateInput {
 	input := directoryNameTemplateInput{
 		Key:    entry.CiteName,
 		Type:   entry.Type,
-		Fields: make(map[string]string),
+		Fields: make(map[string]interface{}),
 	}
 
 	for key, value := range entry.Fields {

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/Masterminds/sprig"
+	"github.com/Masterminds/sprig/v3"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/network"
 	"net/url"
@@ -32,7 +32,7 @@ func NewUserResolver(httpClient *network.HttpClient, cfg []config.Resolver) (Sou
 		rule := resolverRule{}
 
 		for schemeIndex, scheme := range resolverCfg.Schemes {
-			templateName := fmt.Sprintf("/resolvers/%d/schemes/%d", resolverIndex, schemeIndex)
+			templateName := fmt.Sprintf("resolvers.%d.schemes.%d", resolverIndex, schemeIndex)
 			tmpl, err := template.New(templateName).Funcs(sprig.TxtFuncMap()).Parse(scheme)
 			if err != nil {
 				return nil, err
