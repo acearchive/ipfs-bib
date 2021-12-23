@@ -97,24 +97,6 @@ func (c *HttpClient) CheckExists(ctx context.Context, sourceUrl *url.URL) (bool,
 	return true, nil
 }
 
-func (c *HttpClient) Download(ctx context.Context, sourceUrl *url.URL) ([]byte, error) {
-	response, err := c.Request(ctx, http.MethodGet, sourceUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	responseBody, err := io.ReadAll(response.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := response.Body.Close(); err != nil {
-		return nil, err
-	}
-
-	return responseBody, nil
-}
-
 func UnmarshalJson(response *http.Response, value interface{}) error {
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {

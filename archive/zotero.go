@@ -8,6 +8,7 @@ import (
 	"github.com/frawleyskid/ipfs-bib/network"
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -24,8 +25,19 @@ var zoteroHeaders = map[string]string{
 	"Zotero-API-Version": strconv.Itoa(zoteroApiVersion),
 }
 
+type ZoteroLinkMode string
+
+const (
+	LinkModeImportedFile ZoteroLinkMode = "imported_file"
+	LinkModeImportedUrl  ZoteroLinkMode = "imported_url"
+	LinkModeLinkedFile   ZoteroLinkMode = "linked_file"
+	LinkModeLinkedUrl    ZoteroLinkMode = "linked_url"
+)
+
 type ZoteroAttachment struct {
-	Url       url.URL
+	Key       ZoteroKey
+	LinkMode  ZoteroLinkMode
+	Url       *url.URL
 	MediaType string
 }
 
@@ -60,12 +72,14 @@ func (r *ZoteroCitationResponse) ParseBib() (*bibtex.BibEntry, error) {
 }
 
 type ZoteroAttachmentData struct {
-	Key       ZoteroKey `json:"parentItem"`
-	Url       string    `json:"url"`
-	MediaType string    `json:"contentType"`
+	CitationKey ZoteroKey      `json:"parentItem"`
+	Url         string         `json:"url"`
+	LinkMode    ZoteroLinkMode `json:"linkMode"`
+	MediaType   string         `json:"contentType"`
 }
 
 type ZoteroAttachmentResponse struct {
+	Key  ZoteroKey            `json:"key"`
 	Data ZoteroAttachmentData `json:"data"`
 }
 
@@ -163,17 +177,24 @@ func (c *ZoteroClient) downloadAttachmentList(ctx context.Context, groupId strin
 	attachmentMap := make(map[ZoteroKey][]ZoteroAttachment)
 
 	for _, attachmentResponse := range attachmentResponseList {
-		attachmentUrl, err := url.Parse(attachmentResponse.Data.Url)
-		if err != nil {
-			continue
+		var (
+			attachmentUrl *url.URL
+			err           error
+		)
+
+		attachmentUrl, err = url.Parse(attachmentResponse.Data.Url)
+		if attachmentResponse.Data.Url == "" || err != nil {
+			attachmentUrl = nil
 		}
 
 		attachment := ZoteroAttachment{
-			Url:       *attachmentUrl,
+			Key:       attachmentResponse.Key,
+			Url:       attachmentUrl,
+			LinkMode:  attachmentResponse.Data.LinkMode,
 			MediaType: attachmentResponse.Data.MediaType,
 		}
 
-		attachmentMap[attachmentResponse.Data.Key] = append(attachmentMap[attachmentResponse.Data.Key], attachment)
+		attachmentMap[attachmentResponse.Data.CitationKey] = append(attachmentMap[attachmentResponse.Data.CitationKey], attachment)
 	}
 
 	return attachmentMap, nil
@@ -203,9 +224,39 @@ func (c *ZoteroClient) DownloadCitations(ctx context.Context, groupId string) ([
 	return citations, nil
 }
 
-func (c *ZoteroClient) DownloadAttachment(ctx context.Context, attachment *ZoteroAttachment) (*handler.SourceContent, error) {
-	content, err := c.httpClient.Download(ctx, &attachment.Url)
+func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, attachment *ZoteroAttachment) (*handler.SourceContent, error) {
+	var (
+		downloadUrl *url.URL
+		err         error
+	)
+
+	switch attachment.LinkMode {
+	case LinkModeLinkedUrl, LinkModeImportedUrl:
+		if attachment.Url == nil {
+			return nil, nil
+		} else {
+			downloadUrl = attachment.Url
+		}
+	case LinkModeLinkedFile, LinkModeImportedFile:
+		rawApiUrl := fmt.Sprintf("https://api.zotero.org/groups/%s/items/%s/file", url.PathEscape(groupId), url.PathEscape(attachment.Key))
+
+		downloadUrl, err = url.Parse(rawApiUrl)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	downloadResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, downloadUrl, zoteroHeaders)
 	if err != nil {
+		return nil, err
+	}
+
+	content, err := io.ReadAll(downloadResponse.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := downloadResponse.Body.Close(); err != nil {
 		return nil, err
 	}
 
@@ -243,7 +294,7 @@ citeMap:
 
 		for _, attachment := range citation.Attachments {
 			if attachment.IsPreferred() {
-				preferredContent, err := zoteroClient.DownloadAttachment(ctx, &attachment)
+				preferredContent, err := zoteroClient.DownloadAttachment(ctx, groupId, &attachment)
 				if err != nil {
 					log.Println(err)
 				} else {
@@ -272,7 +323,7 @@ citeMap:
 			continue
 		}
 
-		contingencyContent, err := zoteroClient.DownloadAttachment(ctx, &citation.Attachments[0])
+		contingencyContent, err := zoteroClient.DownloadAttachment(ctx, groupId, &citation.Attachments[0])
 		if err != nil {
 			log.Println(err)
 		} else {
