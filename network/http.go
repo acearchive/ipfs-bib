@@ -54,7 +54,12 @@ func (c *HttpClient) RequestWithHeaders(ctx context.Context, method string, requ
 	}
 
 	if ok := response.StatusCode >= 200 && response.StatusCode < 300; !ok {
-		return nil, ErrHttpNotOk{StatusCode: response.StatusCode, Status: response.Status}
+		return nil, ErrHttpNotOk{
+			Method:     method,
+			Url:        *requestUrl,
+			StatusCode: response.StatusCode,
+			Status:     response.Status,
+		}
 	}
 
 	return response, nil
@@ -124,10 +129,12 @@ func UnmarshalJson(response *http.Response, value interface{}) error {
 }
 
 type ErrHttpNotOk struct {
+	Method     string
+	Url        url.URL
 	Status     string
 	StatusCode int
 }
 
 func (e ErrHttpNotOk) Error() string {
-	return fmt.Sprintf("request returned with status code %s", e.Status)
+	return fmt.Sprintf("%s \"%s\" returned with status code %s", e.Method, e.Url.String(), e.Status)
 }
