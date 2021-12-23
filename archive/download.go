@@ -77,7 +77,7 @@ func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLoca
 	}, nil
 }
 
-func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*BibContents, error) {
+func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) ([]BibContents, error) {
 	client := NewDownloadClient(network.NewClient(cfg.Archive.UserAgent))
 
 	downloadHandler := handler.FromConfig(cfg)
@@ -87,17 +87,16 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*B
 		return nil, err
 	}
 
-	contentMap := make(map[BibCiteName]DownloadedContent)
-	entryMap := make(map[BibCiteName]bibtex.BibEntry)
+	var bibContentsList []BibContents
 
 	for _, bibEntry := range bib.Entries {
-		preferredLocalContent, err := ReadLocalBibSource(bibEntry, preferredMediaTypes)
+		bibContent := BibContents{Entry: *bibEntry}
+
+		bibContent.Contents, err = ReadLocalBibSource(bibEntry, preferredMediaTypes)
 		if err != nil {
 			logging.Verbose.Println(err)
-		} else if preferredLocalContent != nil {
-			contentMap[BibCiteName(bibEntry.CiteName)] = *preferredLocalContent
-			entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
-
+		} else if bibContent.Contents != nil {
+			bibContentsList = append(bibContentsList, bibContent)
 			continue
 		}
 
@@ -107,32 +106,28 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*B
 		}
 
 		if locator != nil {
-			downloadedContent, err := client.Download(ctx, locator, downloadHandler, sourceResolver)
+			bibContent.Contents, err = client.Download(ctx, locator, downloadHandler, sourceResolver)
 			if err != nil {
 				logging.Verbose.Println(err)
-			} else if downloadedContent != nil {
-				contentMap[BibCiteName(bibEntry.CiteName)] = *downloadedContent
-				entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
-
+			} else if bibContent.Contents != nil {
+				bibContentsList = append(bibContentsList, bibContent)
 				continue
 			}
 		}
 
-		contingencyLocalContent, err := ReadLocalBibSource(bibEntry, contingencyMediaTypes)
+		bibContent.Contents, err = ReadLocalBibSource(bibEntry, contingencyMediaTypes)
 		if err != nil {
 			logging.Verbose.Println(err)
-		} else if contingencyLocalContent != nil {
-			contentMap[BibCiteName(bibEntry.CiteName)] = *contingencyLocalContent
-			entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
-
+		} else if bibContent.Contents != nil {
+			bibContentsList = append(bibContentsList, bibContent)
 			continue
 		}
+
+		bibContent.Contents = nil
+		bibContentsList = append(bibContentsList, bibContent)
 
 		logging.Error.Println(fmt.Sprintf("Could not find a source for citation: %s", bibEntry.CiteName))
 	}
 
-	return &BibContents{
-		Contents: contentMap,
-		Entries:  entryMap,
-	}, nil
+	return bibContentsList, nil
 }

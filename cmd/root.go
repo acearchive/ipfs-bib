@@ -54,7 +54,7 @@ var (
 
 			var (
 				bib      *bibtex.BibTex
-				contents *archive.BibContents
+				contents []archive.BibContents
 			)
 
 			if useZotero {
@@ -63,7 +63,7 @@ var (
 					return err
 				}
 
-				bib = contents.ToBibtex()
+				bib = archive.ContentsToBibtex(contents)
 			} else {
 				bib, err = archive.ParseBibtex(args[0])
 				if err != nil {

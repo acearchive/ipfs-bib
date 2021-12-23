@@ -8,19 +8,18 @@ import (
 	"github.com/nickng/bibtex"
 )
 
-type BibCiteName string
+type BibCiteName = string
 
 type BibContents struct {
-	Entries  map[BibCiteName]bibtex.BibEntry
-	Contents map[BibCiteName]DownloadedContent
+	Entry    bibtex.BibEntry
+	Contents *DownloadedContent
 }
 
-func (c *BibContents) ToBibtex() *bibtex.BibTex {
+func ContentsToBibtex(contents []BibContents) *bibtex.BibTex {
 	bib := bibtex.NewBibTex()
 
-	for citeName := range c.Entries {
-		bibEntry := c.Entries[citeName]
-		bib.Entries = append(bib.Entries, &bibEntry)
+	for i := range contents {
+		bib.Entries = append(bib.Entries, &contents[i].Entry)
 	}
 
 	return bib
@@ -31,7 +30,7 @@ type Location struct {
 	Entries map[BibCiteName]config.BibEntryLocation
 }
 
-func storeContents(ctx context.Context, cfg *config.Config, contents *BibContents, sourceStore *store.SourceStore) (*Location, error) {
+func storeContents(ctx context.Context, cfg *config.Config, contents []BibContents, sourceStore *store.SourceStore) (*Location, error) {
 	sourcePathTemplate, err := config.NewSourcePathTemplate(cfg)
 	if err != nil {
 		return nil, err
@@ -39,16 +38,18 @@ func storeContents(ctx context.Context, cfg *config.Config, contents *BibContent
 
 	locationMap := make(map[BibCiteName]config.BibEntryLocation)
 
-	for citeName, source := range contents.Contents {
-		bibEntry := contents.Entries[citeName]
+	for _, bibContent := range contents {
+		if bibContent.Contents == nil {
+			continue
+		}
 
-		sourcePath, err := sourcePathTemplate.Execute(&bibEntry, source.MediaType)
+		sourcePath, err := sourcePathTemplate.Execute(&bibContent.Entry, bibContent.Contents.MediaType)
 		if err != nil {
 			return nil, err
 		}
 
 		bibSource := &config.BibSource{
-			Content:       source.Content,
+			Content:       bibContent.Contents.Content,
 			FileName:      sourcePath.FileName,
 			DirectoryName: sourcePath.DirectoryName,
 		}
@@ -58,7 +59,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents *BibContent
 			return nil, err
 		}
 
-		locationMap[citeName] = *entryLocation
+		locationMap[bibContent.Entry.CiteName] = *entryLocation
 	}
 
 	rootCid, err := sourceStore.Write(ctx)
@@ -72,7 +73,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents *BibContent
 	}, nil
 }
 
-func ToCar(ctx context.Context, cfg *config.Config, carPath string, contents *BibContents) (*Location, error) {
+func ToCar(ctx context.Context, cfg *config.Config, carPath string, contents []BibContents) (*Location, error) {
 	dagService, err := store.CarService()
 	if err != nil {
 		return nil, err
@@ -95,7 +96,7 @@ func ToCar(ctx context.Context, cfg *config.Config, carPath string, contents *Bi
 	return location, nil
 }
 
-func ToNode(ctx context.Context, cfg *config.Config, pin bool, contents *BibContents) (*Location, error) {
+func ToNode(ctx context.Context, cfg *config.Config, pin bool, contents []BibContents) (*Location, error) {
 	ipfsApi, err := store.IpfsClient(cfg.Ipfs.Api)
 	if err != nil {
 		return nil, err

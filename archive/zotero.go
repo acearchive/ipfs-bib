@@ -269,7 +269,7 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 	}, nil
 }
 
-func FromZotero(ctx context.Context, cfg *config.Config, groupId string) (*BibContents, error) {
+func FromZotero(ctx context.Context, cfg *config.Config, groupId string) ([]BibContents, error) {
 	httpClient := network.NewClient(cfg.Archive.UserAgent)
 
 	zoteroClient := NewZoteroClient(httpClient)
@@ -283,25 +283,24 @@ func FromZotero(ctx context.Context, cfg *config.Config, groupId string) (*BibCo
 		return nil, err
 	}
 
-	contentMap := make(map[BibCiteName]DownloadedContent)
-	entryMap := make(map[BibCiteName]bibtex.BibEntry)
-
 	citations, err := zoteroClient.DownloadCitations(ctx, groupId)
 	if err != nil {
 		return nil, err
 	}
 
+	var bibContentsList []BibContents
+
 citeMap:
 	for _, citation := range citations {
-		entryMap[BibCiteName(citation.Entry.CiteName)] = citation.Entry
+		bibContent := BibContents{Entry: citation.Entry}
 
 		for _, attachment := range citation.Attachments {
 			if attachment.IsPreferred() {
-				preferredContent, err := zoteroClient.DownloadAttachment(ctx, groupId, &attachment)
+				bibContent.Contents, err = zoteroClient.DownloadAttachment(ctx, groupId, &attachment)
 				if err != nil {
 					logging.Verbose.Println(err)
-				} else if preferredContent != nil {
-					contentMap[BibCiteName(citation.Entry.CiteName)] = *preferredContent
+				} else if bibContent.Contents != nil {
+					bibContentsList = append(bibContentsList, bibContent)
 					continue citeMap
 				}
 			}
@@ -313,30 +312,30 @@ citeMap:
 		}
 
 		if locator != nil {
-			downloadedContent, err := downloadClient.Download(ctx, locator, downloadHandler, sourceResolver)
+			bibContent.Contents, err = downloadClient.Download(ctx, locator, downloadHandler, sourceResolver)
 			if err != nil {
 				logging.Verbose.Println(err)
-			} else if downloadedContent != nil {
-				contentMap[BibCiteName(citation.Entry.CiteName)] = *downloadedContent
+			} else if bibContent.Contents != nil {
+				bibContentsList = append(bibContentsList, bibContent)
 				continue
 			}
 		}
 
 		if len(citation.Attachments) > 0 {
-			contingencyContent, err := zoteroClient.DownloadAttachment(ctx, groupId, &citation.Attachments[0])
+			bibContent.Contents, err = zoteroClient.DownloadAttachment(ctx, groupId, &citation.Attachments[0])
 			if err != nil {
 				logging.Verbose.Println(err)
-			} else if contingencyContent != nil {
-				contentMap[BibCiteName(citation.Entry.CiteName)] = *contingencyContent
+			} else if bibContent.Contents != nil {
+				bibContentsList = append(bibContentsList, bibContent)
 				continue
 			}
 		}
 
+		bibContent.Contents = nil
+		bibContentsList = append(bibContentsList, bibContent)
+
 		logging.Error.Println(fmt.Sprintf("Could not find a source for citation: %s", citation.Entry.CiteName))
 	}
 
-	return &BibContents{
-		Contents: contentMap,
-		Entries:  entryMap,
-	}, nil
+	return bibContentsList, nil
 }

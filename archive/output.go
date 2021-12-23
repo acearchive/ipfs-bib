@@ -3,52 +3,84 @@ package archive
 import (
 	"encoding/json"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/nickng/bibtex"
 )
 
 const outputIndent = "  "
 
-type EntryOutput struct {
+type ArchivedOutput struct {
 	CiteName      string `json:"citeName"`
+	Doi           string `json:"doi"`
 	FileCid       string `json:"fileCid"`
 	FileName      string `json:"fileName"`
 	DirectoryCid  string `json:"directoryCid"`
 	DirectoryName string `json:"directoryName"`
 	IpfsUrl       string `json:"ipfsUrl"`
 	GatewayUrl    string `json:"gatewayUrl"`
-	Origin        string `json:"origin"`
+	ContentOrigin string `json:"contentOrigin"`
+}
+
+type NotArchivedOutput struct {
+	CiteName string `json:"citeName"`
+	Doi      string `json:"doi"`
 }
 
 type Output struct {
-	Cid     string        `json:"cid"`
-	Entries []EntryOutput `json:"entries"`
+	Cid           string              `json:"cid"`
+	TotalEntries  int                 `json:"totalEntries"`
+	TotalArchived int                 `json:"totalArchived"`
+	Archived      []ArchivedOutput    `json:"archived"`
+	NotArchived   []NotArchivedOutput `json:"notArchived"`
 }
 
-func NewOutput(cfg *config.Config, contents *BibContents, location *Location) (*Output, error) {
-	entries := make([]EntryOutput, 0, len(location.Entries))
+func doiFromEntry(entry *bibtex.BibEntry) string {
+	if doi := config.BibEntryField(entry, "doi"); doi != nil {
+		return *doi
+	} else {
+		return ""
+	}
+}
 
-	for citeName, entry := range location.Entries {
-		entryContent := contents.Contents[citeName]
+func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (*Output, error) {
+	var (
+		archivedEntries    []ArchivedOutput
+		notArchivedEntries []NotArchivedOutput
+	)
 
-		gatewayUrl, err := entry.GatewayUrl(cfg.Ipfs.Gateway)
-		if err != nil {
-			return nil, err
+	for _, bibContent := range contents {
+		bibLocation, hasLocation := location.Entries[bibContent.Entry.CiteName]
+
+		if hasLocation && bibContent.Contents != nil {
+			gatewayUrl, err := bibLocation.GatewayUrl(cfg.Ipfs.Gateway)
+			if err != nil {
+				return nil, err
+			}
+
+			archivedEntries = append(archivedEntries, ArchivedOutput{
+				CiteName:      bibContent.Entry.CiteName,
+				Doi:           doiFromEntry(&bibContent.Entry),
+				FileCid:       bibLocation.FileCid.String(),
+				FileName:      bibLocation.FileName,
+				DirectoryCid:  bibLocation.DirectoryCid.String(),
+				DirectoryName: bibLocation.DirectoryName,
+				IpfsUrl:       bibLocation.IpfsUrl().String(),
+				GatewayUrl:    gatewayUrl.String(),
+				ContentOrigin: string(bibContent.Contents.Origin),
+			})
+		} else {
+			notArchivedEntries = append(notArchivedEntries, NotArchivedOutput{
+				CiteName: bibContent.Entry.CiteName,
+				Doi:      doiFromEntry(&bibContent.Entry),
+			})
 		}
-
-		entries = append(entries, EntryOutput{
-			CiteName:      string(citeName),
-			FileCid:       entry.FileCid.String(),
-			FileName:      entry.FileName,
-			DirectoryCid:  entry.DirectoryCid.String(),
-			DirectoryName: entry.DirectoryName,
-			IpfsUrl:       entry.IpfsUrl().String(),
-			GatewayUrl:    gatewayUrl.String(),
-			Origin:        string(entryContent.Origin),
-		})
 	}
 
 	return &Output{
-		Cid:     location.Root.String(),
-		Entries: entries,
+		Cid:           location.Root.String(),
+		TotalEntries:  len(contents),
+		TotalArchived: len(archivedEntries),
+		Archived:      archivedEntries,
+		NotArchived:   notArchivedEntries,
 	}, nil
 }
 
