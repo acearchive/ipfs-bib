@@ -7,19 +7,28 @@ import (
 	"net/url"
 )
 
+type ContentOrigin string
+
+const ContentOriginUrl ContentOrigin = "url"
+
+type ResolvedLocator struct {
+	Url    url.URL
+	Origin ContentOrigin
+}
+
 type SourceResolver interface {
-	Resolve(ctx context.Context, locator *config.SourceLocator) (*url.URL, error)
+	Resolve(ctx context.Context, locator *config.SourceLocator) (*ResolvedLocator, error)
 }
 
 type DirectResolver struct{}
 
-func (DirectResolver) Resolve(_ context.Context, locator *config.SourceLocator) (*url.URL, error) {
-	return &locator.Url, nil
+func (DirectResolver) Resolve(_ context.Context, locator *config.SourceLocator) (*ResolvedLocator, error) {
+	return &ResolvedLocator{Url: locator.Url, Origin: ContentOriginUrl}, nil
 }
 
 type NoOpResolver struct{}
 
-func (NoOpResolver) Resolve(_ context.Context, _ *config.SourceLocator) (*url.URL, error) {
+func (NoOpResolver) Resolve(_ context.Context, _ *config.SourceLocator) (*ResolvedLocator, error) {
 	return nil, nil
 }
 

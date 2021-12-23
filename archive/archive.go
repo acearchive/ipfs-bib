@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/ipfs/go-cid"
 	"github.com/frawleyskid/ipfs-bib/config"
-	"github.com/frawleyskid/ipfs-bib/handler"
 	"github.com/frawleyskid/ipfs-bib/store"
 	"github.com/nickng/bibtex"
 )
@@ -12,8 +11,8 @@ import (
 type BibCiteName string
 
 type BibContents struct {
-	Entries map[BibCiteName]bibtex.BibEntry
-	Sources map[BibCiteName]handler.SourceContent
+	Entries  map[BibCiteName]bibtex.BibEntry
+	Contents map[BibCiteName]DownloadedContent
 }
 
 func (c *BibContents) ToBibtex() *bibtex.BibTex {
@@ -40,7 +39,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents *BibContent
 
 	locationMap := make(map[BibCiteName]config.BibEntryLocation)
 
-	for citeName, source := range contents.Sources {
+	for citeName, source := range contents.Contents {
 		bibEntry := contents.Entries[citeName]
 
 		sourcePath, err := sourcePathTemplate.Execute(&bibEntry, source.MediaType)

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/frawleyskid/ipfs-bib/archive"
 	"github.com/frawleyskid/ipfs-bib/config"
@@ -101,17 +100,17 @@ var (
 			}
 
 			if jsonOutput {
-				output, err := location.ToOutput(cfg)
+				output, err := archive.NewOutput(cfg, contents, location)
 				if err != nil {
 					return err
 				}
 
-				marshalledOutput, err := json.MarshalIndent(output, "", archive.OutputIndent)
+				jsonOutput, err := output.FormatJson()
 				if err != nil {
 					return err
 				}
 
-				fmt.Println(string(marshalledOutput))
+				fmt.Println(jsonOutput)
 			} else {
 				fmt.Println(location.Root.String())
 			}

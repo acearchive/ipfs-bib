@@ -12,6 +12,7 @@ import (
 )
 
 type resolverRule struct {
+	Name    string
 	Schemes []template.Template
 	Filter  config.HostnameFilter
 }
@@ -53,8 +54,8 @@ func NewUserResolver(httpClient *network.HttpClient, cfg []config.Resolver) (Sou
 	return &UserResolver{httpClient, rules}, nil
 }
 
-func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocator) (*url.URL, error) {
-	var proxiedUrls []url.URL
+func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocator) (*ResolvedLocator, error) {
+	var resolvedLocators []ResolvedLocator
 
 	for _, rule := range u.rules {
 		templateInput, err := config.NewProxySchemeInput(locator, &rule.Filter)
@@ -84,18 +85,20 @@ func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 				continue
 			}
 
-			proxiedUrls = append(proxiedUrls, *proxyUrl)
+			resolvedLocator := ResolvedLocator{Url: *proxyUrl, Origin: ContentOrigin(rule.Name)}
+
+			resolvedLocators = append(resolvedLocators, resolvedLocator)
 		}
 	}
 
-	for _, proxyUrl := range proxiedUrls {
-		exists, err := u.httpClient.CheckExists(ctx, &proxyUrl)
+	for _, resolvedLocator := range resolvedLocators {
+		exists, err := u.httpClient.CheckExists(ctx, &resolvedLocator.Url)
 		if err != nil {
 			return nil, err
 		}
 
 		if exists {
-			return &proxyUrl, nil
+			return &resolvedLocator, nil
 		}
 	}
 

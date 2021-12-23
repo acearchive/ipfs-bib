@@ -35,6 +35,7 @@ type Snapshot struct {
 }
 
 type Resolver struct {
+	Name             string   `mapstructure:"name"`
 	Schemes          []string `mapstructure:"schemes"`
 	IncludeHostnames []string `mapstructure:"include-hostnames"`
 	ExcludeHostnames []string `mapstructure:"exclude-hostnames"`

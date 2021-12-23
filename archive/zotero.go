@@ -34,6 +34,8 @@ const (
 	LinkModeLinkedUrl    ZoteroLinkMode = "linked_url"
 )
 
+const ContentOriginZotero resolver.ContentOrigin = "zotero"
+
 type ZoteroAttachment struct {
 	Key       ZoteroKey
 	LinkMode  ZoteroLinkMode
@@ -224,7 +226,7 @@ func (c *ZoteroClient) DownloadCitations(ctx context.Context, groupId string) ([
 	return citations, nil
 }
 
-func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, attachment *ZoteroAttachment) (*handler.SourceContent, error) {
+func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, attachment *ZoteroAttachment) (*DownloadedContent, error) {
 	var (
 		downloadUrl *url.URL
 		err         error
@@ -260,9 +262,10 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 		return nil, err
 	}
 
-	return &handler.SourceContent{
+	return &DownloadedContent{
 		Content:   content,
 		MediaType: attachment.MediaType,
+		Origin:    ContentOriginZotero,
 	}, nil
 }
 
@@ -280,7 +283,7 @@ func FromZotero(ctx context.Context, cfg *config.Config, groupId string) (*BibCo
 		return nil, err
 	}
 
-	contentMap := make(map[BibCiteName]handler.SourceContent)
+	contentMap := make(map[BibCiteName]DownloadedContent)
 	entryMap := make(map[BibCiteName]bibtex.BibEntry)
 
 	citations, err := zoteroClient.DownloadCitations(ctx, groupId)
@@ -332,7 +335,7 @@ citeMap:
 	}
 
 	return &BibContents{
-		Sources: contentMap,
-		Entries: entryMap,
+		Contents: contentMap,
+		Entries:  entryMap,
 	}, nil
 }

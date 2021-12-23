@@ -12,6 +12,12 @@ import (
 	"net/http"
 )
 
+type DownloadedContent struct {
+	Content   []byte
+	MediaType string
+	Origin    resolver.ContentOrigin
+}
+
 type DownloadClient struct {
 	httpClient *network.HttpClient
 }
@@ -20,7 +26,7 @@ func NewDownloadClient(httpClient *network.HttpClient) *DownloadClient {
 	return &DownloadClient{httpClient}
 }
 
-func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLocator, downloadHandler handler.DownloadHandler, sourceResolver resolver.SourceResolver) (*handler.SourceContent, error) {
+func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLocator, downloadHandler handler.DownloadHandler, sourceResolver resolver.SourceResolver) (*DownloadedContent, error) {
 	redirectedUrl, err := c.httpClient.ResolveRedirect(ctx, &locator.Url)
 	if err != nil {
 		return nil, err
@@ -31,12 +37,12 @@ func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLoca
 		Url: *redirectedUrl,
 	}
 
-	resolvedUrl, err := sourceResolver.Resolve(ctx, redirectedLocator)
+	resolvedLocator, err := sourceResolver.Resolve(ctx, redirectedLocator)
 	if err != nil {
 		return nil, err
 	}
 
-	response, err := c.httpClient.Request(ctx, http.MethodGet, resolvedUrl)
+	response, err := c.httpClient.Request(ctx, http.MethodGet, &resolvedLocator.Url)
 	if err != nil {
 		return nil, err
 	}
@@ -51,17 +57,23 @@ func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLoca
 	}
 
 	downloadResponse := &handler.DownloadResponse{
-		Url:    *resolvedUrl,
+		Url:    resolvedLocator.Url,
 		Header: response.Header,
 		Body:   responseBody,
 	}
 
-	content, err := downloadHandler.Handle(ctx, downloadResponse)
+	sourceContent, err := downloadHandler.Handle(ctx, downloadResponse)
 	if err != nil {
 		return nil, err
+	} else if sourceContent == nil {
+		return nil, nil
 	}
 
-	return content, nil
+	return &DownloadedContent{
+		Content:   sourceContent.Content,
+		MediaType: sourceContent.MediaType,
+		Origin:    resolvedLocator.Origin,
+	}, nil
 }
 
 func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*BibContents, error) {
@@ -74,7 +86,7 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*B
 		return nil, err
 	}
 
-	contentMap := make(map[BibCiteName]handler.SourceContent)
+	contentMap := make(map[BibCiteName]DownloadedContent)
 	entryMap := make(map[BibCiteName]bibtex.BibEntry)
 
 	for _, bibEntry := range bib.Entries {
@@ -117,7 +129,7 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*B
 	}
 
 	return &BibContents{
-		Sources: contentMap,
-		Entries: entryMap,
+		Contents: contentMap,
+		Entries:  entryMap,
 	}, nil
 }

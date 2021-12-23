@@ -3,7 +3,7 @@ package archive
 import (
 	"errors"
 	"github.com/frawleyskid/ipfs-bib/config"
-	"github.com/frawleyskid/ipfs-bib/handler"
+	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
 	"os"
 	"strings"
@@ -14,6 +14,8 @@ const (
 	bibtexFileFieldSeparator = ":"
 	bibtexFileFields         = 3
 )
+
+const ContentOriginLocal resolver.ContentOrigin = "local"
 
 var (
 	preferredMediaTypes   = []string{"application/pdf"}
@@ -38,7 +40,7 @@ func ParseBibtex(bibPath string) (*bibtex.BibTex, error) {
 	return bib, nil
 }
 
-func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*handler.SourceContent, error) {
+func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*DownloadedContent, error) {
 	rawField := config.BibEntryField(entry, "file")
 	if rawField == nil {
 		return nil, nil
@@ -63,9 +65,10 @@ func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*handler.S
 					return nil, err
 				}
 
-				return &handler.SourceContent{
+				return &DownloadedContent{
 					Content:   fileContent,
 					MediaType: bibMediaType,
+					Origin:    ContentOriginLocal,
 				}, nil
 			}
 		}

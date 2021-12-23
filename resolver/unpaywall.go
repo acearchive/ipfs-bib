@@ -9,6 +9,8 @@ import (
 	"net/url"
 )
 
+const ContentOriginUnpaywall ContentOrigin = "unpaywall"
+
 type UnpaywallResolver struct {
 	httpClient *network.HttpClient
 	auth       string
@@ -22,7 +24,7 @@ func NewUnpaywallResolver(httpClient *network.HttpClient, cfg *config.Config) So
 	return &UnpaywallResolver{httpClient, cfg.Unpaywall.Email}
 }
 
-func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceLocator) (*url.URL, error) {
+func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceLocator) (*ResolvedLocator, error) {
 	if locator.Doi == nil {
 		return nil, nil
 	}
@@ -60,5 +62,10 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceL
 		return nil, nil
 	}
 
-	return url.Parse(rawResolvedUrl.(string))
+	resolvedUrl, err := url.Parse(rawResolvedUrl.(string))
+	if err != nil {
+		return nil, err
+	}
+
+	return &ResolvedLocator{Url: *resolvedUrl, Origin: ContentOriginUnpaywall}, nil
 }

@@ -93,6 +93,9 @@
 
 # Resolve sources through a link resolver.
 #[[resolvers]]
+    # The name of this resolver.
+    #name = "Example Resolver"
+
     # A list of URL schemes to try in order. Each scheme is a golang
     # `text/template` template which returns the proxied URL. If a template
     # evaluates to an empty string, it is ignored. Functions provided by the
