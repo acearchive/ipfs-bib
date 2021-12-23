@@ -3,17 +3,22 @@ package handler
 import (
 	"bytes"
 	"context"
+	"github.com/frawleyskid/ipfs-bib/network"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 	"io"
 	"net/http"
+	"net/url"
 )
 
+const DefaultUrlScheme = "https"
+
 type EmbeddedHandler struct {
-	tagFinder *TagFinder
+	tagFinder  *TagFinder
+	httpClient *network.HttpClient
 }
 
-func NewEmbeddedHandler(mediaTypes []string) DownloadHandler {
+func NewEmbeddedHandler(userAgent string, mediaTypes []string) DownloadHandler {
 	if len(mediaTypes) == 0 {
 		return &NoOpHandler{}
 	}
@@ -34,10 +39,11 @@ func NewEmbeddedHandler(mediaTypes []string) DownloadHandler {
 
 			return false
 		}),
+		httpClient: network.NewClient(userAgent),
 	}
 }
 
-func (e *EmbeddedHandler) Handle(_ context.Context, response *DownloadResponse) (*SourceContent, error) {
+func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse) (*SourceContent, error) {
 	if response.MediaType() != "text/html" {
 		return nil, nil
 	}
@@ -56,27 +62,36 @@ func (e *EmbeddedHandler) Handle(_ context.Context, response *DownloadResponse) 
 	}
 
 	if embeddedNode := e.tagFinder.Find(documentNode); embeddedNode != nil {
-		var contentUrl string
+		var rawContentUrl string
 
 		switch embeddedNode.DataAtom {
 		case atom.Object:
 			if value := FindAttr(embeddedNode, "data"); value != nil {
-				contentUrl = *value
+				rawContentUrl = *value
 			} else {
 				return nil, nil
 			}
 		case atom.Embed:
 			if value := FindAttr(embeddedNode, "src"); value != nil {
-				contentUrl = *value
+				rawContentUrl = *value
 			} else {
 				return nil, nil
 			}
-			contentUrl = *FindAttr(embeddedNode, "src")
+			rawContentUrl = *FindAttr(embeddedNode, "src")
 		default:
 			panic("unexpected html node")
 		}
 
-		response, err := http.Get(contentUrl)
+		contentUrl, err := url.Parse(rawContentUrl)
+		if err != nil {
+			return nil, err
+		}
+
+		if contentUrl.Scheme == "" {
+			contentUrl.Scheme = DefaultUrlScheme
+		}
+
+		response, err := e.httpClient.Request(ctx, http.MethodGet, contentUrl)
 		if err != nil {
 			return nil, err
 		}

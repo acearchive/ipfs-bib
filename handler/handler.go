@@ -8,10 +8,7 @@ import (
 	"net/url"
 )
 
-const (
-	ContentTypeHeader = "Content-Type"
-	DefaultMediaType  = "application/octet-stream"
-)
+const ContentTypeHeader = "Content-Type"
 
 type SourceContent struct {
 	Content   []byte
@@ -29,7 +26,7 @@ func (r *DownloadResponse) MediaType() string {
 	if err == nil {
 		return mediaType
 	} else {
-		return DefaultMediaType
+		return config.DefaultMediaType
 	}
 }
 
@@ -73,7 +70,7 @@ func FromConfig(cfg *config.Config) DownloadHandler {
 	}
 
 	return MultiHandler{
-		NewEmbeddedHandler(cfg.Archive.EmbeddedTypes),
+		NewEmbeddedHandler(cfg.Archive.UserAgent, cfg.Archive.EmbeddedTypes),
 		NewMonolithHandler(cfg),
 		NewDirectHandler(excludeTypes),
 	}

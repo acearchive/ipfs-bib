@@ -10,6 +10,8 @@ import (
 	"text/template"
 )
 
+const DefaultMediaType = "application/octet-stream"
+
 type SourcePath struct {
 	FileName      string
 	DirectoryName string
@@ -69,7 +71,7 @@ type fileNameTemplateInput struct {
 func newFileNameTemplateInput(entry *bibtex.BibEntry, mediaType string) (*fileNameTemplateInput, error) {
 	mediaType, _, err := mime.ParseMediaType(mediaType)
 	if err != nil {
-		return nil, err
+		mediaType = DefaultMediaType
 	}
 
 	extensions, err := mime.ExtensionsByType(mediaType)
