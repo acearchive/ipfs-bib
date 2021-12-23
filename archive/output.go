@@ -2,8 +2,11 @@ package archive
 
 import (
 	"encoding/json"
+	"fmt"
+	"github.com/fatih/color"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/nickng/bibtex"
+	"strconv"
 )
 
 const outputIndent = "  "
@@ -82,6 +85,23 @@ func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (
 		Archived:      archivedEntries,
 		NotArchived:   notArchivedEntries,
 	}, nil
+}
+
+func prettyPrintLine(title string, value string) {
+	titleFunc := color.New(color.Bold).SprintFunc()
+	if _, err := fmt.Fprintf(color.Output, "%s: %s\n", titleFunc(title), value); err != nil {
+		panic(err)
+	}
+}
+
+func (o *Output) PrettyPrint() {
+	good := color.New(color.FgGreen).SprintFunc()
+	bad := color.New(color.FgRed).SprintFunc()
+
+	prettyPrintLine("Root CID", o.Cid)
+	prettyPrintLine("Total entries", strconv.Itoa(o.TotalEntries))
+	prettyPrintLine("Entries archived", good(o.TotalArchived))
+	prettyPrintLine("Entries not archived", bad(o.TotalEntries-o.TotalArchived))
 }
 
 func (o *Output) FormatJson() (string, error) {

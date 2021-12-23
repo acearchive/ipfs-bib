@@ -82,7 +82,7 @@ func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*Downloade
 
 func UpdateBib(bib *bibtex.BibTex, gateway *string, location *Location) error {
 	for _, entry := range bib.Entries {
-		entryLocation, ok := location.Entries[BibCiteName(entry.CiteName)]
+		entryLocation, ok := location.Entries[entry.CiteName]
 		if !ok {
 			continue
 		}
