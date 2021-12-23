@@ -9,9 +9,8 @@ import (
 )
 
 const (
-	ContentTypeHeader        = "Content-Type"
-	ContentDispositionHeader = "Content-Disposition"
-	DefaultMediaType         = "application/octet-stream"
+	ContentTypeHeader = "Content-Type"
+	DefaultMediaType  = "application/octet-stream"
 )
 
 type SourceContent struct {
@@ -32,10 +31,6 @@ func (r *DownloadResponse) MediaType() string {
 	} else {
 		return DefaultMediaType
 	}
-}
-
-func (r *DownloadResponse) ContentDisposition() string {
-	return r.Header.Get(ContentDispositionHeader)
 }
 
 type DownloadHandler interface {
