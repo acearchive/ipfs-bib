@@ -12,6 +12,7 @@ type BibCiteName = string
 
 type BibContents struct {
 	Entry    bibtex.BibEntry
+	Doi      *string
 	Contents *DownloadedContent
 }
 

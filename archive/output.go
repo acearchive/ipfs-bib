@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/frawleyskid/ipfs-bib/config"
-	"github.com/nickng/bibtex"
 	"strconv"
 )
 
@@ -36,14 +35,6 @@ type Output struct {
 	NotArchived   []NotArchivedOutput `json:"notArchived"`
 }
 
-func doiFromEntry(entry *bibtex.BibEntry) string {
-	if doi := config.BibEntryField(entry, "doi"); doi != nil {
-		return *doi
-	} else {
-		return ""
-	}
-}
-
 func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (*Output, error) {
 	var (
 		archivedEntries    []ArchivedOutput
@@ -53,6 +44,12 @@ func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (
 	for _, bibContent := range contents {
 		bibLocation, hasLocation := location.Entries[bibContent.Entry.CiteName]
 
+		entryDoi := ""
+
+		if bibContent.Doi != nil {
+			entryDoi = *bibContent.Doi
+		}
+
 		if hasLocation && bibContent.Contents != nil {
 			gatewayUrl, err := bibLocation.GatewayUrl(cfg.Ipfs.Gateway)
 			if err != nil {
@@ -61,7 +58,7 @@ func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (
 
 			archivedEntries = append(archivedEntries, ArchivedOutput{
 				CiteName:      bibContent.Entry.CiteName,
-				Doi:           doiFromEntry(&bibContent.Entry),
+				Doi:           entryDoi,
 				FileCid:       bibLocation.FileCid.String(),
 				FileName:      bibLocation.FileName,
 				DirectoryCid:  bibLocation.DirectoryCid.String(),
@@ -73,7 +70,7 @@ func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (
 		} else {
 			notArchivedEntries = append(notArchivedEntries, NotArchivedOutput{
 				CiteName: bibContent.Entry.CiteName,
-				Doi:      doiFromEntry(&bibContent.Entry),
+				Doi:      entryDoi,
 			})
 		}
 	}

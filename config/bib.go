@@ -12,9 +12,12 @@ const CanonicalDoiPrefix = "https://doi.org/"
 
 var DoiPrefixes = []string{
 	"doi:",
-	"https://doi.org/",
 	"http://doi.org/",
+	"https://doi.org/",
 	"doi.org/",
+	"http://dx.doi.org/",
+	"https://dx.doi.org/",
+	"dx.doi.org/",
 }
 
 type SourceLocator struct {

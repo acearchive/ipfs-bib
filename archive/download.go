@@ -90,7 +90,12 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) ([]
 	var bibContentsList []BibContents
 
 	for _, bibEntry := range bib.Entries {
-		bibContent := BibContents{Entry: *bibEntry}
+		locator, err := config.LocateEntry(bibEntry)
+		if err != nil {
+			return nil, err
+		}
+
+		bibContent := BibContents{Entry: *bibEntry, Doi: locator.Doi}
 
 		bibContent.Contents, err = ReadLocalBibSource(bibEntry, preferredMediaTypes)
 		if err != nil {
@@ -98,11 +103,6 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) ([]
 		} else if bibContent.Contents != nil {
 			bibContentsList = append(bibContentsList, bibContent)
 			continue
-		}
-
-		locator, err := config.LocateEntry(bibEntry)
-		if err != nil {
-			return nil, err
 		}
 
 		if locator != nil {

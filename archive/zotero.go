@@ -294,6 +294,15 @@ citeMap:
 	for _, citation := range citations {
 		bibContent := BibContents{Entry: citation.Entry}
 
+		locator, err := config.LocateEntry(&citation.Entry)
+		if err != nil {
+			return nil, err
+		}
+
+		if locator != nil {
+			bibContent.Doi = locator.Doi
+		}
+
 		for _, attachment := range citation.Attachments {
 			if attachment.IsPreferred() {
 				bibContent.Contents, err = zoteroClient.DownloadAttachment(ctx, groupId, &attachment)
@@ -304,11 +313,6 @@ citeMap:
 					continue citeMap
 				}
 			}
-		}
-
-		locator, err := config.LocateEntry(&citation.Entry)
-		if err != nil {
-			return nil, err
 		}
 
 		if locator != nil {
