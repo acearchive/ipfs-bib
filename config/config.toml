@@ -45,7 +45,7 @@
     ]
 
     # The user agent to use when downloading content from the legacy web.
-    user-agent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0"
+    user-agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36"
 
 # Find open access content on Unpaywall.
 [unpaywall]
