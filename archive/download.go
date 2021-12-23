@@ -8,6 +8,7 @@ import (
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -82,33 +83,35 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*B
 			return nil, err
 		}
 
-		var content *handler.SourceContent
-
-		content, err = ReadLocalBibSource(bibEntry, preferredMediaTypes)
+		preferredLocalContent, err := ReadLocalBibSource(bibEntry, preferredMediaTypes)
 		if err != nil {
-			return nil, err
-		}
+			log.Println(err)
+		} else if preferredLocalContent != nil {
+			contentMap[BibCiteName(bibEntry.CiteName)] = *preferredLocalContent
+			entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
 
-		if content == nil {
-			content, err = client.Download(ctx, locator, downloadHandler, sourceResolver)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if content == nil {
-			content, err = ReadLocalBibSource(bibEntry, contingencyMediaTypes)
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		if content == nil {
 			continue
 		}
 
-		contentMap[BibCiteName(bibEntry.CiteName)] = *content
-		entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
+		downloadedContent, err := client.Download(ctx, locator, downloadHandler, sourceResolver)
+		if err != nil {
+			log.Println(err)
+		} else if downloadedContent != nil {
+			contentMap[BibCiteName(bibEntry.CiteName)] = *downloadedContent
+			entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
+
+			continue
+		}
+
+		contingencyLocalContent, err := ReadLocalBibSource(bibEntry, contingencyMediaTypes)
+		if err != nil {
+			log.Println(err)
+		} else if contingencyLocalContent != nil {
+			contentMap[BibCiteName(bibEntry.CiteName)] = *contingencyLocalContent
+			entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
+
+			continue
+		}
 	}
 
 	return &BibContents{

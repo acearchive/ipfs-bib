@@ -8,6 +8,7 @@ import (
 	"github.com/frawleyskid/ipfs-bib/network"
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -215,12 +216,11 @@ citeMap:
 			if attachment.IsPreferred() {
 				preferredContent, err := zoteroClient.DownloadAttachment(ctx, &attachment)
 				if err != nil {
-					return nil, err
+					log.Println(err)
+				} else {
+					contentMap[BibCiteName(citation.Entry.CiteName)] = *preferredContent
+					continue citeMap
 				}
-
-				contentMap[BibCiteName(citation.Entry.CiteName)] = *preferredContent
-
-				continue citeMap
 			}
 		}
 
@@ -231,20 +231,20 @@ citeMap:
 
 		downloadedContent, err := downloadClient.Download(ctx, locator, downloadHandler, sourceResolver)
 		if err != nil {
-			return nil, err
-		}
-
-		if downloadedContent != nil {
+			log.Println(err)
+		} else if downloadedContent != nil {
 			contentMap[BibCiteName(citation.Entry.CiteName)] = *downloadedContent
 			continue
 		}
 
-		if len(citation.Attachments) > 0 {
-			contingencyContent, err := zoteroClient.DownloadAttachment(ctx, &citation.Attachments[0])
-			if err != nil {
-				return nil, err
-			}
+		if len(citation.Attachments) == 0 {
+			continue
+		}
 
+		contingencyContent, err := zoteroClient.DownloadAttachment(ctx, &citation.Attachments[0])
+		if err != nil {
+			log.Println(err)
+		} else {
 			contentMap[BibCiteName(citation.Entry.CiteName)] = *contingencyContent
 		}
 	}
