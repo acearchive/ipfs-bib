@@ -55,6 +55,10 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceL
 		return nil, err
 	}
 
+	if apiResponse.BestLocation.Url == "" {
+		return nil, nil
+	}
+
 	resolvedUrl, err := url.Parse(apiResponse.BestLocation.Url)
 	if err != nil {
 		return nil, err
