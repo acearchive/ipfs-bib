@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/handler"
+	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/frawleyskid/ipfs-bib/network"
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -299,8 +299,8 @@ citeMap:
 			if attachment.IsPreferred() {
 				preferredContent, err := zoteroClient.DownloadAttachment(ctx, groupId, &attachment)
 				if err != nil {
-					log.Println(err)
-				} else {
+					logging.Verbose.Println(err)
+				} else if preferredContent != nil {
 					contentMap[BibCiteName(citation.Entry.CiteName)] = *preferredContent
 					continue citeMap
 				}
@@ -315,23 +315,24 @@ citeMap:
 		if locator != nil {
 			downloadedContent, err := downloadClient.Download(ctx, locator, downloadHandler, sourceResolver)
 			if err != nil {
-				log.Println(err)
+				logging.Verbose.Println(err)
 			} else if downloadedContent != nil {
 				contentMap[BibCiteName(citation.Entry.CiteName)] = *downloadedContent
 				continue
 			}
 		}
 
-		if len(citation.Attachments) == 0 {
-			continue
+		if len(citation.Attachments) > 0 {
+			contingencyContent, err := zoteroClient.DownloadAttachment(ctx, groupId, &citation.Attachments[0])
+			if err != nil {
+				logging.Verbose.Println(err)
+			} else if contingencyContent != nil {
+				contentMap[BibCiteName(citation.Entry.CiteName)] = *contingencyContent
+				continue
+			}
 		}
 
-		contingencyContent, err := zoteroClient.DownloadAttachment(ctx, groupId, &citation.Attachments[0])
-		if err != nil {
-			log.Println(err)
-		} else {
-			contentMap[BibCiteName(citation.Entry.CiteName)] = *contingencyContent
-		}
+		logging.Error.Println(fmt.Sprintf("Could not find a source for citation: %s", citation.Entry.CiteName))
 	}
 
 	return &BibContents{

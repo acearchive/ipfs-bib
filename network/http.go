@@ -61,11 +61,11 @@ func (c *HttpClient) RequestWithHeaders(ctx context.Context, method string, requ
 
 	response, err := c.client.Do(request)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrHttp, err)
 	}
 
 	if ok := response.StatusCode >= 200 && response.StatusCode < 300; !ok {
-		return nil, ErrHttpNotOk{
+		return nil, &ErrHttpStatus{
 			Method:     method,
 			Url:        *requestUrl,
 			StatusCode: response.StatusCode,
@@ -97,7 +97,7 @@ func (c *HttpClient) ResolveRedirect(ctx context.Context, sourceUrl *url.URL) (*
 func (c *HttpClient) CheckExists(ctx context.Context, sourceUrl *url.URL) (bool, error) {
 	_, err := c.Request(ctx, http.MethodGet, sourceUrl)
 	if err != nil {
-		httpErr := ErrHttpNotOk{}
+		httpErr := ErrHttpStatus{}
 		if errors.As(err, &httpErr) && httpErr.StatusCode == http.StatusNotFound {
 			return false, nil
 		} else {
@@ -121,13 +121,19 @@ func UnmarshalJson(response *http.Response, value interface{}) error {
 	return json.Unmarshal(responseBody, value)
 }
 
-type ErrHttpNotOk struct {
+var ErrHttp = errors.New("http error")
+
+type ErrHttpStatus struct {
 	Method     string
 	Url        url.URL
 	Status     string
 	StatusCode int
 }
 
-func (e ErrHttpNotOk) Error() string {
-	return fmt.Sprintf("%s \"%s\" returned with status code %s", e.Method, e.Url.String(), e.Status)
+func (e ErrHttpStatus) Error() string {
+	return fmt.Sprintf("%s \"%s\" returned %s", e.Method, e.Url.String(), e.Status)
+}
+
+func (e ErrHttpStatus) Unwrap() error {
+	return ErrHttp
 }

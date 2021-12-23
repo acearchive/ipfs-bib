@@ -2,7 +2,9 @@ package archive
 
 import (
 	"errors"
+	"fmt"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
 	"os"
@@ -60,6 +62,7 @@ func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*Downloade
 			if bibMediaType == mediaType {
 				fileContent, err := os.ReadFile(bibFilePath)
 				if errors.Is(err, os.ErrNotExist) {
+					logging.Verbose.Println(fmt.Sprintf("Local source file does not exist: %s", bibFilePath))
 					continue
 				} else if err != nil {
 					return nil, err

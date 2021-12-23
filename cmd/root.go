@@ -5,19 +5,22 @@ import (
 	"fmt"
 	"github.com/frawleyskid/ipfs-bib/archive"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/nickng/bibtex"
+	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
 )
 
 var (
-	configPath string
-	outputPath string
-	carPath    string
-	pinSources bool
-	jsonOutput bool
-	useZotero  bool
+	configPath    string
+	outputPath    string
+	carPath       string
+	pinSources    bool
+	jsonOutput    bool
+	useZotero     bool
+	verboseOutput bool
 
 	rootCmd = &cobra.Command{
 		Use:                   "ipfs-bib [options] <bibtex_file>",
@@ -27,6 +30,10 @@ var (
 		DisableFlagsInUseLine: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
+
+			if !verboseOutput {
+				logging.Verbose.SetOutput(ioutil.Discard)
+			}
 
 			var (
 				cfg *config.Config
@@ -135,4 +142,5 @@ func init() {
 	rootCmd.Flags().BoolVar(&pinSources, "pin", false, "Pin the source files when adding them to the IPFS node.")
 	rootCmd.Flags().BoolVar(&jsonOutput, "json", false, "Produce machine-readable JSON output.")
 	rootCmd.Flags().BoolVar(&useZotero, "zotero", false, "Pull references from a public Zotero library. Instead of the path of a local bibtex file, pass a Zotero group ID.")
+	rootCmd.Flags().BoolVarP(&verboseOutput, "verbose", "v", false, "Print verbose output.")
 }

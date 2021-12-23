@@ -2,13 +2,14 @@ package archive
 
 import (
 	"context"
+	"fmt"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/handler"
+	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/frawleyskid/ipfs-bib/network"
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
 	"io"
-	"log"
 	"net/http"
 )
 
@@ -92,7 +93,7 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*B
 	for _, bibEntry := range bib.Entries {
 		preferredLocalContent, err := ReadLocalBibSource(bibEntry, preferredMediaTypes)
 		if err != nil {
-			log.Println(err)
+			logging.Verbose.Println(err)
 		} else if preferredLocalContent != nil {
 			contentMap[BibCiteName(bibEntry.CiteName)] = *preferredLocalContent
 			entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
@@ -108,7 +109,7 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*B
 		if locator != nil {
 			downloadedContent, err := client.Download(ctx, locator, downloadHandler, sourceResolver)
 			if err != nil {
-				log.Println(err)
+				logging.Verbose.Println(err)
 			} else if downloadedContent != nil {
 				contentMap[BibCiteName(bibEntry.CiteName)] = *downloadedContent
 				entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
@@ -119,13 +120,15 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*B
 
 		contingencyLocalContent, err := ReadLocalBibSource(bibEntry, contingencyMediaTypes)
 		if err != nil {
-			log.Println(err)
+			logging.Verbose.Println(err)
 		} else if contingencyLocalContent != nil {
 			contentMap[BibCiteName(bibEntry.CiteName)] = *contingencyLocalContent
 			entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
 
 			continue
 		}
+
+		logging.Error.Println(fmt.Sprintf("Could not find a source for citation: %s", bibEntry.CiteName))
 	}
 
 	return &BibContents{
