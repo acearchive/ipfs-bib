@@ -15,7 +15,10 @@ import (
 	"strings"
 )
 
-const zoteroApiVersion = 3
+const (
+	zoteroApiVersion = 3
+	apiPageLimit     = 50
+)
 
 var zoteroHeaders = map[string]string{
 	"Zotero-API-Version": strconv.Itoa(zoteroApiVersion),
@@ -80,22 +83,35 @@ func NewZoteroClient(httpClient *network.HttpClient) *ZoteroClient {
 }
 
 func (c *ZoteroClient) downloadCiteList(ctx context.Context, groupId string) (map[ZoteroKey]bibtex.BibEntry, error) {
-	rawApiUrl := fmt.Sprintf("https://api.zotero.org/groups/%s/items?include=biblatex", url.PathEscape(groupId))
-
-	apiUrl, err := url.Parse(rawApiUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	apiResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, apiUrl, zoteroHeaders)
-	if err != nil {
-		return nil, err
-	}
-
 	var citeResponseList []ZoteroCitationResponse
 
-	if err := network.UnmarshalJson(apiResponse, &citeResponseList); err != nil {
-		return nil, err
+	startIndex := 0
+
+	for {
+		rawApiUrl := fmt.Sprintf("https://api.zotero.org/groups/%s/items?include=biblatex&start=%d&limit=%d", url.PathEscape(groupId), startIndex, apiPageLimit)
+
+		apiUrl, err := url.Parse(rawApiUrl)
+		if err != nil {
+			return nil, err
+		}
+
+		apiResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, apiUrl, zoteroHeaders)
+		if err != nil {
+			return nil, err
+		}
+
+		var currentResponseList []ZoteroCitationResponse
+
+		if err := network.UnmarshalJson(apiResponse, &currentResponseList); err != nil {
+			return nil, err
+		}
+
+		startIndex += len(currentResponseList)
+		citeResponseList = append(citeResponseList, currentResponseList...)
+
+		if len(currentResponseList) < apiPageLimit {
+			break
+		}
 	}
 
 	citeMap := make(map[ZoteroKey]bibtex.BibEntry)
@@ -113,22 +129,35 @@ func (c *ZoteroClient) downloadCiteList(ctx context.Context, groupId string) (ma
 }
 
 func (c *ZoteroClient) downloadAttachmentList(ctx context.Context, groupId string) (map[ZoteroKey][]ZoteroAttachment, error) {
-	rawApiUrl := fmt.Sprintf("https://api.zotero.org/groups/%s/items?itemType=attachment", url.PathEscape(groupId))
-
-	apiUrl, err := url.Parse(rawApiUrl)
-	if err != nil {
-		return nil, err
-	}
-
-	apiResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, apiUrl, zoteroHeaders)
-	if err != nil {
-		return nil, err
-	}
-
 	var attachmentResponseList []ZoteroAttachmentResponse
 
-	if err := network.UnmarshalJson(apiResponse, &attachmentResponseList); err != nil {
-		return nil, err
+	startIndex := 0
+
+	for {
+		rawApiUrl := fmt.Sprintf("https://api.zotero.org/groups/%s/items?itemType=attachment&start=%d&limit=%d", url.PathEscape(groupId), startIndex, apiPageLimit)
+
+		apiUrl, err := url.Parse(rawApiUrl)
+		if err != nil {
+			return nil, err
+		}
+
+		apiResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, apiUrl, zoteroHeaders)
+		if err != nil {
+			return nil, err
+		}
+
+		var currentResponseList []ZoteroAttachmentResponse
+
+		if err := network.UnmarshalJson(apiResponse, &currentResponseList); err != nil {
+			return nil, err
+		}
+
+		startIndex += len(currentResponseList)
+		attachmentResponseList = append(attachmentResponseList, currentResponseList...)
+
+		if len(currentResponseList) < apiPageLimit {
+			break
+		}
 	}
 
 	attachmentMap := make(map[ZoteroKey][]ZoteroAttachment)
