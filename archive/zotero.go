@@ -258,12 +258,14 @@ citeMap:
 			return nil, err
 		}
 
-		downloadedContent, err := downloadClient.Download(ctx, locator, downloadHandler, sourceResolver)
-		if err != nil {
-			log.Println(err)
-		} else if downloadedContent != nil {
-			contentMap[BibCiteName(citation.Entry.CiteName)] = *downloadedContent
-			continue
+		if locator != nil {
+			downloadedContent, err := downloadClient.Download(ctx, locator, downloadHandler, sourceResolver)
+			if err != nil {
+				log.Println(err)
+			} else if downloadedContent != nil {
+				contentMap[BibCiteName(citation.Entry.CiteName)] = *downloadedContent
+				continue
+			}
 		}
 
 		if len(citation.Attachments) == 0 {

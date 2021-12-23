@@ -78,11 +78,6 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*B
 	entryMap := make(map[BibCiteName]bibtex.BibEntry)
 
 	for _, bibEntry := range bib.Entries {
-		locator, err := config.LocateEntry(bibEntry)
-		if err != nil {
-			return nil, err
-		}
-
 		preferredLocalContent, err := ReadLocalBibSource(bibEntry, preferredMediaTypes)
 		if err != nil {
 			log.Println(err)
@@ -93,14 +88,21 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) (*B
 			continue
 		}
 
-		downloadedContent, err := client.Download(ctx, locator, downloadHandler, sourceResolver)
+		locator, err := config.LocateEntry(bibEntry)
 		if err != nil {
-			log.Println(err)
-		} else if downloadedContent != nil {
-			contentMap[BibCiteName(bibEntry.CiteName)] = *downloadedContent
-			entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
+			return nil, err
+		}
 
-			continue
+		if locator != nil {
+			downloadedContent, err := client.Download(ctx, locator, downloadHandler, sourceResolver)
+			if err != nil {
+				log.Println(err)
+			} else if downloadedContent != nil {
+				contentMap[BibCiteName(bibEntry.CiteName)] = *downloadedContent
+				entryMap[BibCiteName(bibEntry.CiteName)] = *bibEntry
+
+				continue
+			}
 		}
 
 		contingencyLocalContent, err := ReadLocalBibSource(bibEntry, contingencyMediaTypes)
