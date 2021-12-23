@@ -19,7 +19,8 @@ type BibContents struct {
 func (c *BibContents) ToBibtex() *bibtex.BibTex {
 	bib := bibtex.NewBibTex()
 
-	for _, bibEntry := range c.Entries {
+	for citeName := range c.Entries {
+		bibEntry := c.Entries[citeName]
 		bib.Entries = append(bib.Entries, &bibEntry)
 	}
 
