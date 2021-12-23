@@ -55,12 +55,12 @@ func (a *ZoteroAttachment) IsPreferred() bool {
 
 type ZoteroKey = string
 
-type ZoteroCitationResponse struct {
+type zoteroCitationResponse struct {
 	Key ZoteroKey `json:"key"`
 	Bib string    `json:"biblatex"`
 }
 
-func (r *ZoteroCitationResponse) ParseBib() (*bibtex.BibEntry, error) {
+func (r *zoteroCitationResponse) ParseBib() (*bibtex.BibEntry, error) {
 	bib, err := bibtex.Parse(strings.NewReader(r.Bib))
 	if err != nil {
 		return nil, err
@@ -73,16 +73,16 @@ func (r *ZoteroCitationResponse) ParseBib() (*bibtex.BibEntry, error) {
 	return bib.Entries[0], nil
 }
 
-type ZoteroAttachmentData struct {
+type zoteroAttachmentDataResponse struct {
 	CitationKey ZoteroKey      `json:"parentItem"`
 	Url         string         `json:"url"`
 	LinkMode    ZoteroLinkMode `json:"linkMode"`
 	MediaType   string         `json:"contentType"`
 }
 
-type ZoteroAttachmentResponse struct {
-	Key  ZoteroKey            `json:"key"`
-	Data ZoteroAttachmentData `json:"data"`
+type zoteroAttachmentResponse struct {
+	Key  ZoteroKey                    `json:"key"`
+	Data zoteroAttachmentDataResponse `json:"data"`
 }
 
 type ZoteroCitation struct {
@@ -99,7 +99,7 @@ func NewZoteroClient(httpClient *network.HttpClient) *ZoteroClient {
 }
 
 func (c *ZoteroClient) downloadCiteList(ctx context.Context, groupId string) (map[ZoteroKey]bibtex.BibEntry, error) {
-	var citeResponseList []ZoteroCitationResponse
+	var citeResponseList []zoteroCitationResponse
 
 	startIndex := 0
 
@@ -116,7 +116,7 @@ func (c *ZoteroClient) downloadCiteList(ctx context.Context, groupId string) (ma
 			return nil, err
 		}
 
-		var currentResponseList []ZoteroCitationResponse
+		var currentResponseList []zoteroCitationResponse
 
 		if err := network.UnmarshalJson(apiResponse, &currentResponseList); err != nil {
 			return nil, err
@@ -145,7 +145,7 @@ func (c *ZoteroClient) downloadCiteList(ctx context.Context, groupId string) (ma
 }
 
 func (c *ZoteroClient) downloadAttachmentList(ctx context.Context, groupId string) (map[ZoteroKey][]ZoteroAttachment, error) {
-	var attachmentResponseList []ZoteroAttachmentResponse
+	var attachmentResponseList []zoteroAttachmentResponse
 
 	startIndex := 0
 
@@ -162,7 +162,7 @@ func (c *ZoteroClient) downloadAttachmentList(ctx context.Context, groupId strin
 			return nil, err
 		}
 
-		var currentResponseList []ZoteroAttachmentResponse
+		var currentResponseList []zoteroAttachmentResponse
 
 		if err := network.UnmarshalJson(apiResponse, &currentResponseList); err != nil {
 			return nil, err

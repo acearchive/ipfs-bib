@@ -11,6 +11,14 @@ import (
 
 const ContentOriginUnpaywall ContentOrigin = "unpaywall"
 
+type unpaywallLocationResponse struct {
+	Url string `json:"url_for_pdf"`
+}
+
+type unpaywallResponse struct {
+	BestLocation unpaywallLocationResponse `json:"best_oa_location"`
+}
+
 type UnpaywallResolver struct {
 	httpClient *network.HttpClient
 	auth       string
@@ -36,33 +44,18 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceL
 		return nil, err
 	}
 
-	var jsonResponse map[string]interface{}
-
 	response, err := u.httpClient.Request(ctx, http.MethodGet, requestUrl)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := network.UnmarshalJson(response, &jsonResponse); err != nil {
+	apiResponse := unpaywallResponse{}
+
+	if err := network.UnmarshalJson(response, &apiResponse); err != nil {
 		return nil, err
 	}
 
-	bestLocationJson, ok := jsonResponse["best_oa_location"]
-	if !ok {
-		return nil, nil
-	}
-
-	bestLocation, ok := bestLocationJson.(map[string]interface{})
-	if !ok {
-		return nil, nil
-	}
-
-	rawResolvedUrl, ok := bestLocation["url"]
-	if !ok {
-		return nil, nil
-	}
-
-	resolvedUrl, err := url.Parse(rawResolvedUrl.(string))
+	resolvedUrl, err := url.Parse(apiResponse.BestLocation.Url)
 	if err != nil {
 		return nil, err
 	}
