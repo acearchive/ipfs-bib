@@ -11,6 +11,8 @@ import (
 	"text/template"
 )
 
+const ContentOriginUser ContentOrigin = "resolver"
+
 type resolverRule struct {
 	Name    string
 	Schemes []template.Template
@@ -85,7 +87,7 @@ func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 				continue
 			}
 
-			resolvedLocator := ResolvedLocator{Url: *proxyUrl, Origin: ContentOrigin(rule.Name)}
+			resolvedLocator := ResolvedLocator{Url: *proxyUrl, Origin: ContentOriginUser}
 
 			resolvedLocators = append(resolvedLocators, resolvedLocator)
 		}
