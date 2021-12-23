@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"time"
 )
@@ -16,8 +17,18 @@ const (
 	UserAgentHeader string        = "User-Agent"
 )
 
-var defaultClient = http.Client{
-	Timeout: DefaultTimeout,
+var defaultClient http.Client
+
+func init() {
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		panic(err)
+	}
+
+	defaultClient = http.Client{
+		Timeout: DefaultTimeout,
+		Jar:     jar,
+	}
 }
 
 func NewClient(userAgent string) *HttpClient {
