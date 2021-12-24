@@ -3,7 +3,9 @@ package handler
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/frawleyskid/ipfs-bib/network"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -51,7 +53,7 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 
 	rootNode, err := html.Parse(bytes.NewReader(response.Body))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
 	}
 
 	documentNode := FindChild(rootNode, func(node *html.Node) bool {
@@ -79,12 +81,12 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 				return nil, ErrNotHandled
 			}
 		default:
-			panic("unexpected html node")
+			logging.Error.Fatal("unexpected HTML node type")
 		}
 
 		contentUrl, err := url.Parse(rawContentUrl)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
 		}
 
 		if contentUrl.Scheme == "" {
@@ -98,16 +100,16 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 
 		content, err := io.ReadAll(response.Body)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
 		}
 
 		if err := response.Body.Close(); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
 		}
 
 		mediaType := FindAttr(embeddedNode, "type")
 		if mediaType == nil {
-			panic("node unexpectedly missing its content type")
+			logging.Error.Fatal("node unexpectedly missing its content type")
 		}
 
 		return &SourceContent{

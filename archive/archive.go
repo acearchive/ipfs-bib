@@ -44,10 +44,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents []BibConten
 			continue
 		}
 
-		sourcePath, err := sourcePathTemplate.Execute(&bibContent.Entry, bibContent.Contents.FileName, bibContent.Contents.MediaType)
-		if err != nil {
-			return nil, err
-		}
+		sourcePath := sourcePathTemplate.Execute(&bibContent.Entry, bibContent.Contents.FileName, bibContent.Contents.MediaType)
 
 		bibSource := &config.BibSource{
 			Content:       bibContent.Contents.Content,
@@ -75,10 +72,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents []BibConten
 }
 
 func ToCar(ctx context.Context, cfg *config.Config, carPath string, contents []BibContents) (*Location, error) {
-	dagService, err := store.CarService()
-	if err != nil {
-		return nil, err
-	}
+	dagService := store.CarService()
 
 	sourceStore, err := store.NewSourceStore(ctx, dagService)
 	if err != nil {

@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"github.com/ipfs/go-cid"
 	ipfs "github.com/ipfs/go-ipfs-http-client"
 	"github.com/ipfs/interface-go-ipfs-core/options"
@@ -16,5 +17,9 @@ func Pin(ctx context.Context, api *ipfs.HttpApi, id cid.Cid, recursive bool) err
 		return nil
 	}
 
-	return api.Pin().Add(ctx, ipfsPath, option)
+	if err := api.Pin().Add(ctx, ipfsPath, option); err != nil {
+		return fmt.Errorf("%w, %v", ErrIpfs, err)
+	} else {
+		return nil
+	}
 }

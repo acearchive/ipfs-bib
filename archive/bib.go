@@ -20,6 +20,8 @@ const (
 
 const ContentOriginLocal resolver.ContentOrigin = "local"
 
+var ErrParseBibtex = errors.New("error parsing bibtex")
+
 var (
 	preferredMediaTypes   = []string{"application/pdf"}
 	contingencyMediaTypes = []string{"text/html"}
@@ -33,7 +35,7 @@ func ParseBibtex(bibPath string) (*bibtex.BibTex, error) {
 
 	bib, err := bibtex.Parse(bibFile)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrParseBibtex, err)
 	}
 
 	if err := bibFile.Close(); err != nil {
@@ -46,7 +48,7 @@ func ParseBibtex(bibPath string) (*bibtex.BibTex, error) {
 func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*DownloadedContent, error) {
 	rawField := config.BibEntryField(entry, "file")
 	if rawField == nil {
-		return nil, nil
+		return nil, ErrNoSource
 	}
 
 	rawFiles := strings.Split(*rawField, bibtexFileSeparator)
@@ -84,7 +86,7 @@ func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*Downloade
 		}
 	}
 
-	return nil, nil
+	return nil, ErrNoSource
 }
 
 func UpdateBib(bib *bibtex.BibTex, gateway *string, location *Location) error {

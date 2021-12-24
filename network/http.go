@@ -19,6 +19,11 @@ const (
 
 var defaultClient http.Client
 
+var (
+	ErrInvalidApiUrl     = errors.New("invalid API url")
+	ErrUnmarshalResponse = errors.New("error unmarshalling HTTP response")
+)
+
 func init() {
 	jar, err := cookiejar.New(nil)
 	if err != nil {
@@ -50,7 +55,7 @@ func (c *HttpClient) Request(ctx context.Context, method string, requestUrl *url
 func (c *HttpClient) RequestWithHeaders(ctx context.Context, method string, requestUrl *url.URL, headers map[string]string) (*http.Response, error) {
 	request, err := http.NewRequestWithContext(ctx, method, requestUrl.String(), nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrHttp, err)
 	}
 
 	request.Header.Set(UserAgentHeader, c.userAgent)
@@ -111,14 +116,18 @@ func (c *HttpClient) CheckExists(ctx context.Context, sourceUrl *url.URL) (bool,
 func UnmarshalJson(response *http.Response, value interface{}) error {
 	responseBody, err := io.ReadAll(response.Body)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %v", ErrHttp, err)
 	}
 
 	if err := response.Body.Close(); err != nil {
-		return err
+		return fmt.Errorf("%w: %v", ErrHttp, err)
 	}
 
-	return json.Unmarshal(responseBody, value)
+	if err := json.Unmarshal(responseBody, value); err != nil {
+		return fmt.Errorf("%w: %v", ErrUnmarshalResponse, err)
+	}
+
+	return nil
 }
 
 var ErrHttp = errors.New("http error")

@@ -2,7 +2,10 @@ package config
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"github.com/Masterminds/sprig/v3"
+	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/nickng/bibtex"
 	"mime"
 	"path"
@@ -11,6 +14,8 @@ import (
 )
 
 const DefaultMediaType = "application/octet-stream"
+
+var ErrInvalidTemplate = errors.New("malformed config template")
 
 type SourcePath struct {
 	FileName      string
@@ -25,40 +30,36 @@ type SourcePathTemplate struct {
 func NewSourcePathTemplate(cfg *Config) (*SourcePathTemplate, error) {
 	filename, err := template.New("archive.file-name").Funcs(sprig.TxtFuncMap()).Parse(cfg.Archive.FileName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrInvalidTemplate, err)
 	}
 
 	directory, err := template.New("archive.directory-name").Funcs(sprig.TxtFuncMap()).Parse(cfg.Archive.DirectoryName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrInvalidTemplate, err)
 	}
 
 	return &SourcePathTemplate{filename: *filename, directory: *directory}, nil
 }
 
-func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, originalFileName string, mediaType string) (*SourcePath, error) {
+func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, originalFileName string, mediaType string) *SourcePath {
 	var filenameBytes bytes.Buffer
 	var directoryBytes bytes.Buffer
 
-	filenameInput, err := newFileNameTemplateInput(entry, originalFileName, mediaType)
-	if err != nil {
-		return nil, err
-	}
-
+	filenameInput := newFileNameTemplateInput(entry, originalFileName, mediaType)
 	directoryInput := newDirectoryNameTemplateInput(entry)
 
 	if err := s.filename.Execute(&filenameBytes, filenameInput); err != nil {
-		return nil, err
+		logging.Error.Fatal(err)
 	}
 
 	if err := s.directory.Execute(&directoryBytes, directoryInput); err != nil {
-		return nil, err
+		logging.Error.Fatal(err)
 	}
 
 	return &SourcePath{
 		FileName:      filenameBytes.String(),
 		DirectoryName: directoryBytes.String(),
-	}, nil
+	}
 }
 
 type fileNameTemplateInput struct {
@@ -69,7 +70,7 @@ type fileNameTemplateInput struct {
 	Extension string
 }
 
-func newFileNameTemplateInput(entry *bibtex.BibEntry, originalFileName string, mediaType string) (*fileNameTemplateInput, error) {
+func newFileNameTemplateInput(entry *bibtex.BibEntry, originalFileName string, mediaType string) *fileNameTemplateInput {
 	mediaType, _, err := mime.ParseMediaType(mediaType)
 	if err != nil {
 		mediaType = DefaultMediaType
@@ -77,7 +78,7 @@ func newFileNameTemplateInput(entry *bibtex.BibEntry, originalFileName string, m
 
 	extensions, err := mime.ExtensionsByType(mediaType)
 	if err != nil {
-		return nil, err
+		extensions = nil
 	}
 
 	var extension string
@@ -100,7 +101,7 @@ func newFileNameTemplateInput(entry *bibtex.BibEntry, originalFileName string, m
 		input.Fields[key] = value.String()
 	}
 
-	return &input, nil
+	return &input
 }
 
 type directoryNameTemplateInput struct {
@@ -140,7 +141,7 @@ type HostnameFilter struct {
 	Exclude []string
 }
 
-func NewProxySchemeInput(locator *SourceLocator, filter *HostnameFilter) (*ProxySchemeInput, error) {
+func NewProxySchemeInput(locator *SourceLocator, filter *HostnameFilter) *ProxySchemeInput {
 	useProxy := len(filter.Include) == 0
 
 	for _, includeHost := range filter.Include {
@@ -158,7 +159,7 @@ func NewProxySchemeInput(locator *SourceLocator, filter *HostnameFilter) (*Proxy
 	}
 
 	if !useProxy {
-		return nil, nil
+		return nil
 	}
 
 	return &ProxySchemeInput{
@@ -169,5 +170,5 @@ func NewProxySchemeInput(locator *SourceLocator, filter *HostnameFilter) (*Proxy
 			Directory: strings.TrimPrefix(path.Dir(locator.Url.Path), "/") + "/",
 			Filename:  strings.TrimPrefix(path.Base(locator.Url.Path), "/"),
 		},
-	}, nil
+	}
 }

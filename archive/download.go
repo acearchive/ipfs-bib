@@ -14,7 +14,7 @@ import (
 	"net/http"
 )
 
-var ErrNotDownloaded = errors.New("content not downloaded")
+var ErrNoSource = errors.New("source not found")
 
 type DownloadedContent struct {
 	Content   []byte
@@ -44,7 +44,7 @@ func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLoca
 
 	resolvedLocator, err := sourceResolver.Resolve(ctx, redirectedLocator)
 	if errors.Is(err, resolver.ErrNotResolved) {
-		return nil, ErrNotDownloaded
+		return nil, ErrNoSource
 	} else if err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLoca
 
 	sourceContent, err := downloadHandler.Handle(ctx, downloadResponse)
 	if errors.Is(err, handler.ErrNotHandled) {
-		return nil, ErrNotDownloaded
+		return nil, ErrNoSource
 	} else if err != nil {
 		return nil, err
 	}
@@ -108,34 +108,29 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) ([]
 		bibContent := BibContents{Entry: *bibEntry, Doi: locator.Doi}
 
 		bibContent.Contents, err = ReadLocalBibSource(bibEntry, preferredMediaTypes)
-		if err != nil {
-			logging.Verbose.Println(err)
-		} else if bibContent.Contents != nil {
+		if err == nil {
 			bibContentsList = append(bibContentsList, bibContent)
 			continue
+		} else if !errors.Is(err, ErrNoSource) {
+			logging.Verbose.Println(err)
 		}
 
 		if locator != nil {
 			bibContent.Contents, err = client.Download(ctx, locator, downloadHandler, sourceResolver)
-			if errors.Is(err, ErrNotDownloaded) {
-				logging.Verbose.Println(err)
-			} else if err != nil {
-				return nil, err
-			}
-			if err != nil {
-				logging.Verbose.Println(err)
-			} else if bibContent.Contents != nil {
+			if err == nil {
 				bibContentsList = append(bibContentsList, bibContent)
 				continue
+			} else if !errors.Is(err, ErrNoSource) {
+				logging.Verbose.Println(err)
 			}
 		}
 
 		bibContent.Contents, err = ReadLocalBibSource(bibEntry, contingencyMediaTypes)
-		if err != nil {
-			logging.Verbose.Println(err)
-		} else if bibContent.Contents != nil {
+		if err == nil {
 			bibContentsList = append(bibContentsList, bibContent)
 			continue
+		} else if !errors.Is(err, ErrNoSource) {
+			logging.Verbose.Println(err)
 		}
 
 		bibContent.Contents = nil

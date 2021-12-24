@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/ipfs/go-cid"
+	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/nickng/bibtex"
 	"mime"
 	"net/url"
@@ -28,7 +29,10 @@ const doiUrlRegexMatchGroup = 3
 
 var doiUrlRegex = regexp.MustCompile(`^(https?://)?(dx\.)?doi\.org/(10\.[0-9]{4,}(\.[0-9]+)*/\S+)$`)
 
-var ErrCouldNotLocateEntry = errors.New("bitex entry has no URL or DOI")
+var (
+	ErrCouldNotLocateEntry = errors.New("bitex entry has no URL or DOI")
+	ErrMalformedGateway    = errors.New("IPFS gateway is malformed")
+)
 
 func FileNameFromUrl(sourceUrl *url.URL, mediaType string) string {
 	if sourceUrl == nil || mediaType == "" {
@@ -79,9 +83,9 @@ func LocateEntry(entry *bibtex.BibEntry) (*SourceLocator, error) {
 			}
 		}
 
-		sourceUrl, err = url.Parse(canonicalDoiUrlPrefix + doi)
+		sourceUrl, err = url.Parse(canonicalDoiUrlPrefix + url.PathEscape(doi))
 		if err != nil {
-			return nil, err
+			logging.Error.Fatal(err)
 		}
 
 		sourceDoi = &doi
@@ -90,10 +94,11 @@ func LocateEntry(entry *bibtex.BibEntry) (*SourceLocator, error) {
 	if rawUrl := BibEntryField(entry, "url"); rawUrl != nil {
 		sourceUrl, err = url.Parse(*rawUrl)
 		if err != nil {
-			return nil, err
+			logging.Verbose.Printf("malformed bibtex URL: %s", *rawUrl)
+			sourceUrl = nil
 		}
 
-		if sourceDoi == nil {
+		if sourceUrl != nil && sourceDoi == nil {
 			// Attempt to extract the DOI from the URL.
 			if matches := doiUrlRegex.FindStringSubmatch(*rawUrl); matches != nil {
 				sourceDoi = &matches[doiUrlRegexMatchGroup]
@@ -124,7 +129,7 @@ type BibEntryLocation struct {
 func (l *BibEntryLocation) IpfsUrl() *url.URL {
 	ipfsUrl, err := url.Parse(fmt.Sprintf("ipfs://%s/?filename=%s", l.FileCid.String(), url.QueryEscape(l.FileName)))
 	if err != nil {
-		panic("failed to parse ipfs:// URL")
+		logging.Error.Fatal(err)
 	}
 
 	return ipfsUrl
@@ -133,8 +138,18 @@ func (l *BibEntryLocation) IpfsUrl() *url.URL {
 func (l *BibEntryLocation) GatewayUrl(gateway string) (*url.URL, error) {
 	switch l.FileCid.Version() {
 	case 0:
-		return url.Parse(fmt.Sprintf("https://%s/ipfs/%s/?filename=%s", gateway, l.FileCid.String(), url.QueryEscape(l.FileName)))
+		gatewayUrl, err := url.Parse(fmt.Sprintf("https://%s/ipfs/%s/?filename=%s", gateway, l.FileCid.String(), url.QueryEscape(l.FileName)))
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", ErrMalformedGateway, gateway)
+		}
+
+		return gatewayUrl, nil
 	default:
-		return url.Parse(fmt.Sprintf("https://%s.ipfs.%s/?filename=%s", l.FileCid.String(), gateway, url.QueryEscape(l.FileName)))
+		gatewayUrl, err := url.Parse(fmt.Sprintf("https://%s.ipfs.%s/?filename=%s", l.FileCid.String(), gateway, url.QueryEscape(l.FileName)))
+		if err != nil {
+			return nil, fmt.Errorf("%w: %s", ErrMalformedGateway, gateway)
+		}
+
+		return gatewayUrl, nil
 	}
 }

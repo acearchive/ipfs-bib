@@ -20,7 +20,9 @@ import (
 	"os"
 )
 
-var ErrCarAlreadyExists = errors.New("this file already exists")
+var (
+	ErrCarAlreadyExists = errors.New("this file already exists")
+)
 
 type dagStore struct {
 	service ipld.DAGService
@@ -30,10 +32,10 @@ func (ds dagStore) Get(ctx context.Context, c cid.Cid) (blocks.Block, error) {
 	return ds.service.Get(ctx, c)
 }
 
-func CarService() (ipld.DAGService, error) {
+func CarService() ipld.DAGService {
 	store := blockstore.NewBlockstore(syncds.MutexWrap(datastore.NewMapDatastore()))
 	blockService := blockservice.New(store, offline.Exchange(store))
-	return dag.NewDAGService(blockService), nil
+	return dag.NewDAGService(blockService)
 }
 
 func WriteCar(ctx context.Context, service ipld.DAGService, root cid.Cid, path string, carv2 bool) error {
@@ -51,7 +53,7 @@ func WriteCar(ctx context.Context, service ipld.DAGService, root cid.Cid, path s
 	}
 
 	if err := car.Write(carFile); err != nil {
-		return err
+		return fmt.Errorf("%w, %v", ErrIpfs, err)
 	}
 
 	if err := carFile.Close(); err != nil {
@@ -60,7 +62,7 @@ func WriteCar(ctx context.Context, service ipld.DAGService, root cid.Cid, path s
 
 	if carv2 {
 		if err := gocarv2.WrapV1File(carFile.Name(), path); err != nil {
-			return err
+			return fmt.Errorf("%w, %v", ErrIpfs, err)
 		}
 
 		if err := os.Remove(carFile.Name()); err != nil {

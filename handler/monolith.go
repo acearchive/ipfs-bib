@@ -3,9 +3,13 @@ package handler
 import (
 	"bytes"
 	"context"
+	"errors"
+	"fmt"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"os/exec"
 )
+
+var ErrMonolith = errors.New("monolith error")
 
 type MonolithHandler struct {
 	path string
@@ -57,7 +61,7 @@ func (s *MonolithHandler) Handle(_ context.Context, response *DownloadResponse) 
 	}
 
 	if _, err := exec.LookPath(s.path); err != nil {
-		return nil, err
+		return nil, ErrNotHandled
 	}
 
 	args := make([]string, len(s.args))
@@ -70,7 +74,7 @@ func (s *MonolithHandler) Handle(_ context.Context, response *DownloadResponse) 
 
 	stdout, err := command.Output()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrMonolith, err)
 	}
 
 	return &SourceContent{

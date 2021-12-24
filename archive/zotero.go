@@ -65,11 +65,11 @@ type zoteroCitationResponse struct {
 func (r *zoteroCitationResponse) ParseBib() (*bibtex.BibEntry, error) {
 	bib, err := bibtex.Parse(strings.NewReader(r.Bib))
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
 	}
 
 	if len(bib.Entries) == 0 {
-		return nil, nil
+		return nil, fmt.Errorf("%w: %s", network.ErrUnmarshalResponse, "invalid bibtex entry")
 	}
 
 	return bib.Entries[0], nil
@@ -111,7 +111,7 @@ func (c *ZoteroClient) downloadCiteList(ctx context.Context, groupId string) (ma
 
 		apiUrl, err := url.Parse(rawApiUrl)
 		if err != nil {
-			return nil, err
+			logging.Error.Fatal(fmt.Errorf("%w: %v", network.ErrInvalidApiUrl, err))
 		}
 
 		apiResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, apiUrl, zoteroHeaders)
@@ -137,7 +137,8 @@ func (c *ZoteroClient) downloadCiteList(ctx context.Context, groupId string) (ma
 
 	for _, citeResponse := range citeResponseList {
 		bib, err := citeResponse.ParseBib()
-		if err != nil || bib == nil {
+		if err != nil {
+			logging.Verbose.Println(err)
 			continue
 		}
 
@@ -157,7 +158,7 @@ func (c *ZoteroClient) downloadAttachmentList(ctx context.Context, groupId strin
 
 		apiUrl, err := url.Parse(rawApiUrl)
 		if err != nil {
-			return nil, err
+			logging.Error.Fatal(fmt.Errorf("%w: %v", network.ErrInvalidApiUrl, err))
 		}
 
 		apiResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, apiUrl, zoteroHeaders)
@@ -253,7 +254,7 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 
 		downloadUrl, err = url.Parse(rawApiUrl)
 		if err != nil {
-			return nil, err
+			logging.Error.Fatal(fmt.Errorf("%w: %v", network.ErrInvalidApiUrl, err))
 		}
 	}
 
@@ -264,11 +265,11 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 
 	content, err := io.ReadAll(downloadResponse.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
 	}
 
 	if err := downloadResponse.Body.Close(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
 	}
 
 	return &DownloadedContent{
@@ -319,32 +320,32 @@ citeMap:
 		for _, attachment := range citation.Attachments {
 			if attachment.IsPreferred() {
 				bibContent.Contents, err = zoteroClient.DownloadAttachment(ctx, groupId, &attachment)
-				if err != nil {
-					logging.Verbose.Println(err)
-				} else if bibContent.Contents != nil {
+				if err == nil {
 					bibContentsList = append(bibContentsList, bibContent)
 					continue citeMap
+				} else if !errors.Is(err, ErrNoSource) {
+					logging.Verbose.Println(err)
 				}
 			}
 		}
 
 		if locator != nil {
 			bibContent.Contents, err = downloadClient.Download(ctx, locator, downloadHandler, sourceResolver)
-			if err != nil {
-				logging.Verbose.Println(err)
-			} else if bibContent.Contents != nil {
+			if err == nil {
 				bibContentsList = append(bibContentsList, bibContent)
 				continue
+			} else if !errors.Is(err, ErrNoSource) {
+				logging.Verbose.Println(err)
 			}
 		}
 
 		if len(citation.Attachments) > 0 {
 			bibContent.Contents, err = zoteroClient.DownloadAttachment(ctx, groupId, &citation.Attachments[0])
-			if err != nil {
-				logging.Verbose.Println(err)
-			} else if bibContent.Contents != nil {
+			if err == nil {
 				bibContentsList = append(bibContentsList, bibContent)
 				continue
+			} else if !errors.Is(err, ErrNoSource) {
+				logging.Verbose.Println(err)
 			}
 		}
 

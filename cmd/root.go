@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"fmt"
 	"github.com/frawleyskid/ipfs-bib/archive"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/logging"
@@ -112,12 +111,7 @@ var (
 			}
 
 			if jsonOutput {
-				jsonOutput, err := output.FormatJson()
-				if err != nil {
-					return err
-				}
-
-				fmt.Println(jsonOutput)
+				output.JsonPrint()
 			} else {
 				output.PrettyPrint()
 			}

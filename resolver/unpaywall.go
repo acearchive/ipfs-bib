@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/frawleyskid/ipfs-bib/network"
 	"net/http"
 	"net/url"
@@ -37,11 +38,11 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceL
 		return nil, ErrNotResolved
 	}
 
-	rawUrl := fmt.Sprintf("https://api.unpaywall.org/v2/%s?email=%s", *locator.Doi, url.QueryEscape(u.auth))
+	rawUrl := fmt.Sprintf("https://api.unpaywall.org/v2/%s?email=%s", url.PathEscape(*locator.Doi), url.QueryEscape(u.auth))
 
 	requestUrl, err := url.Parse(rawUrl)
 	if err != nil {
-		return nil, err
+		logging.Error.Fatal(fmt.Errorf("%w: %v", network.ErrInvalidApiUrl, err))
 	}
 
 	response, err := u.httpClient.Request(ctx, http.MethodGet, requestUrl)
@@ -61,7 +62,7 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceL
 
 	resolvedUrl, err := url.Parse(apiResponse.BestLocation.Url)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
 	}
 
 	return &ResolvedLocator{Url: *resolvedUrl, Origin: ContentOriginUnpaywall}, nil

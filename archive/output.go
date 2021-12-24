@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/fatih/color"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/frawleyskid/ipfs-bib/logging"
 	"strconv"
 )
 
@@ -103,12 +104,10 @@ func (o *Output) PrettyPrint() {
 	prettyPrintLine("Entries not archived", bad(o.TotalEntries-o.TotalArchived))
 }
 
-func (o *Output) FormatJson() (string, error) {
+func (o *Output) JsonPrint() {
 	marshalledOutput, err := json.MarshalIndent(o, "", outputIndent)
 	if err != nil {
-		return "", err
+		logging.Error.Fatal(err)
 	}
-
-	return string(marshalledOutput), nil
-
+	fmt.Println(string(marshalledOutput))
 }

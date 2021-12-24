@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/ipfs/go-cid"
 	ipld "github.com/ipfs/go-ipld-format"
 	dag "github.com/ipfs/go-merkledag"
@@ -10,6 +12,8 @@ import (
 )
 
 var DefaultCidPrefix = dag.V1CidPrefix()
+
+var ErrIpfs = errors.New("ipfs error")
 
 type SourceStore struct {
 	service   ipld.DAGService
@@ -22,11 +26,11 @@ func NewSourceStore(ctx context.Context, service ipld.DAGService) (*SourceStore,
 
 	dirNode, err := directory.GetNode()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w, %v", ErrIpfs, err)
 	}
 
 	if err := service.Add(ctx, dirNode); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w, %v", ErrIpfs, err)
 	}
 
 	return &SourceStore{service, directory}, nil
@@ -35,11 +39,11 @@ func NewSourceStore(ctx context.Context, service ipld.DAGService) (*SourceStore,
 func (s *SourceStore) Write(ctx context.Context) (cid.Cid, error) {
 	node, err := s.directory.GetNode()
 	if err != nil {
-		return cid.Undef, err
+		return cid.Undef, fmt.Errorf("%w, %v", ErrIpfs, err)
 	}
 
 	if err := s.service.Add(ctx, node); err != nil {
-		return cid.Undef, err
+		return cid.Undef, fmt.Errorf("%w, %v", ErrIpfs, err)
 	}
 
 	return node.Cid(), nil
@@ -48,7 +52,7 @@ func (s *SourceStore) Write(ctx context.Context) (cid.Cid, error) {
 func (s *SourceStore) AddSource(ctx context.Context, source *config.BibSource) (*config.BibEntryLocation, error) {
 	contentNode := dag.NewRawNode(source.Content)
 	if err := s.service.Add(ctx, contentNode); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w, %v", ErrIpfs, err)
 	}
 
 	sourceDirectory := unixfs.NewDirectory(s.service)
@@ -60,15 +64,15 @@ func (s *SourceStore) AddSource(ctx context.Context, source *config.BibSource) (
 
 	directoryNode, err := sourceDirectory.GetNode()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w, %v", ErrIpfs, err)
 	}
 
 	if err := s.service.Add(ctx, directoryNode); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w, %v", ErrIpfs, err)
 	}
 
 	if err := s.directory.AddChild(ctx, source.DirectoryName, directoryNode); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w, %v", ErrIpfs, err)
 	}
 
 	return &config.BibEntryLocation{

@@ -39,7 +39,7 @@ func NewUserResolver(httpClient *network.HttpClient, cfg []config.Resolver) (Sou
 			templateName := fmt.Sprintf("resolvers.%d.schemes.%d", resolverIndex, schemeIndex)
 			tmpl, err := template.New(templateName).Funcs(sprig.TxtFuncMap()).Parse(scheme)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("%w: %v", config.ErrInvalidTemplate, err)
 			}
 
 			rule.Schemes = append(rule.Schemes, *tmpl)
@@ -61,10 +61,8 @@ func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 	var resolvedLocators []ResolvedLocator
 
 	for _, rule := range u.rules {
-		templateInput, err := config.NewProxySchemeInput(locator, &rule.Filter)
-		if err != nil {
-			return nil, err
-		} else if templateInput == nil {
+		templateInput := config.NewProxySchemeInput(locator, &rule.Filter)
+		if templateInput == nil {
 			// This source was excluded by the hostname include/exclude rules.
 			continue
 		}
@@ -73,7 +71,7 @@ func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 
 		for _, scheme := range rule.Schemes {
 			if err := scheme.Execute(&rawProxyUrlBytes, templateInput); err != nil {
-				return nil, err
+				logging.Error.Fatal(err)
 			}
 
 			rawProxyUrl := rawProxyUrlBytes.String()
