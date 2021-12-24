@@ -41,6 +41,7 @@ type ZoteroAttachment struct {
 	LinkMode  ZoteroLinkMode
 	Url       *url.URL
 	MediaType string
+	FileName  string
 }
 
 func (a *ZoteroAttachment) IsPreferred() bool {
@@ -78,6 +79,7 @@ type zoteroAttachmentDataResponse struct {
 	Url         string         `json:"url"`
 	LinkMode    ZoteroLinkMode `json:"linkMode"`
 	MediaType   string         `json:"contentType"`
+	FileName    string         `json:"filename"`
 }
 
 type zoteroAttachmentResponse struct {
@@ -189,11 +191,17 @@ func (c *ZoteroClient) downloadAttachmentList(ctx context.Context, groupId strin
 			attachmentUrl = nil
 		}
 
+		fileName := attachmentResponse.Data.FileName
+		if fileName == "" {
+			fileName = config.FileNameFromUrl(attachmentUrl, attachmentResponse.Data.MediaType)
+		}
+
 		attachment := ZoteroAttachment{
 			Key:       attachmentResponse.Key,
 			Url:       attachmentUrl,
 			LinkMode:  attachmentResponse.Data.LinkMode,
 			MediaType: attachmentResponse.Data.MediaType,
+			FileName:  fileName,
 		}
 
 		attachmentMap[attachmentResponse.Data.CitationKey] = append(attachmentMap[attachmentResponse.Data.CitationKey], attachment)
@@ -266,6 +274,7 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 		Content:   content,
 		MediaType: attachment.MediaType,
 		Origin:    ContentOriginZotero,
+		FileName:  attachment.FileName,
 	}, nil
 }
 

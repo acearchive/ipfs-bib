@@ -36,11 +36,11 @@ func NewSourcePathTemplate(cfg *Config) (*SourcePathTemplate, error) {
 	return &SourcePathTemplate{filename: *filename, directory: *directory}, nil
 }
 
-func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, mediaType string) (*SourcePath, error) {
+func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, originalFileName string, mediaType string) (*SourcePath, error) {
 	var filenameBytes bytes.Buffer
 	var directoryBytes bytes.Buffer
 
-	filenameInput, err := newFileNameTemplateInput(entry, mediaType)
+	filenameInput, err := newFileNameTemplateInput(entry, originalFileName, mediaType)
 	if err != nil {
 		return nil, err
 	}
@@ -62,13 +62,14 @@ func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, mediaType string) (
 }
 
 type fileNameTemplateInput struct {
+	Original  string
 	CiteName  string
 	Type      string
 	Fields    map[string]interface{}
 	Extension string
 }
 
-func newFileNameTemplateInput(entry *bibtex.BibEntry, mediaType string) (*fileNameTemplateInput, error) {
+func newFileNameTemplateInput(entry *bibtex.BibEntry, originalFileName string, mediaType string) (*fileNameTemplateInput, error) {
 	mediaType, _, err := mime.ParseMediaType(mediaType)
 	if err != nil {
 		mediaType = DefaultMediaType
@@ -88,6 +89,7 @@ func newFileNameTemplateInput(entry *bibtex.BibEntry, mediaType string) (*fileNa
 	}
 
 	input := fileNameTemplateInput{
+		Original:  originalFileName,
 		CiteName:  entry.CiteName,
 		Type:      entry.Type,
 		Fields:    make(map[string]interface{}),

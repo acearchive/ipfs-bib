@@ -3,6 +3,7 @@ package handler
 import (
 	"bytes"
 	"context"
+	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/network"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
@@ -112,6 +113,7 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 		return &SourceContent{
 			Content:   content,
 			MediaType: *mediaType,
+			FileName:  config.FileNameFromUrl(contentUrl, *mediaType),
 		}, nil
 	}
 

@@ -44,7 +44,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents []BibConten
 			continue
 		}
 
-		sourcePath, err := sourcePathTemplate.Execute(&bibContent.Entry, bibContent.Contents.MediaType)
+		sourcePath, err := sourcePathTemplate.Execute(&bibContent.Entry, bibContent.Contents.FileName, bibContent.Contents.MediaType)
 		if err != nil {
 			return nil, err
 		}

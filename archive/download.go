@@ -16,6 +16,7 @@ import (
 type DownloadedContent struct {
 	Content   []byte
 	MediaType string
+	FileName  string
 	Origin    resolver.ContentOrigin
 }
 
@@ -73,6 +74,7 @@ func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLoca
 	return &DownloadedContent{
 		Content:   sourceContent.Content,
 		MediaType: sourceContent.MediaType,
+		FileName:  sourceContent.FileName,
 		Origin:    resolvedLocator.Origin,
 	}, nil
 }

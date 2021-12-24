@@ -13,6 +13,7 @@ const ContentTypeHeader = "Content-Type"
 type SourceContent struct {
 	Content   []byte
 	MediaType string
+	FileName  string
 }
 
 type DownloadResponse struct {
@@ -52,6 +53,7 @@ func (s *DirectHandler) Handle(_ context.Context, response *DownloadResponse) (*
 	return &SourceContent{
 		Content:   response.Body,
 		MediaType: response.MediaType(),
+		FileName:  config.FileNameFromUrl(&response.Url, response.MediaType()),
 	}, nil
 }
 

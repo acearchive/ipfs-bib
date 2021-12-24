@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/ipfs/go-cid"
 	"github.com/nickng/bibtex"
+	"mime"
 	"net/url"
+	"path"
 	"regexp"
 	"strings"
 )
@@ -24,6 +26,24 @@ var doiPrefixes = []string{
 const doiUrlRegexMatchGroup = 3
 
 var doiUrlRegex = regexp.MustCompile(`^(https?://)?(dx\.)?doi\.org/(10\.[0-9]{4,}(\.[0-9]+)*/\S+)$`)
+
+func FileNameFromUrl(sourceUrl *url.URL, mediaType string) string {
+	if sourceUrl == nil || mediaType == "" {
+		return ""
+	}
+
+	fileName := path.Base(sourceUrl.Path)
+	if fileName == "." {
+		return ""
+	}
+
+	fileExtension := path.Ext(fileName)
+	if mime.TypeByExtension(fileExtension) == mediaType {
+		return fileName
+	} else {
+		return ""
+	}
+}
 
 type SourceLocator struct {
 	Url url.URL

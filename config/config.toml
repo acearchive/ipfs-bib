@@ -19,11 +19,12 @@
     # provided by the sprig library are available in the template. The
     # following fields are available in the template:
     #
+    # .Original - The original file name, if there is one
     # .CiteName - The bibtex entry cite name (e.g. aspelmeyer_measured_2009)
     # .Type - The bibtex entry type (e.g. article)
     # .Fields - A map of fields that appear in the bibtex entry
     # .Extension - A file extension based on the media type (MIME type), including the leading dot
-    file-name = "source{{ .Extension }}"
+    file-name = "{{ if not (empty .Original) }}{{ .Original }}{{ else }}source{{ .Extension }}{{ end }}"
 
     # A template which determines the directory name of the archived source
     # content in IPFS.  This is a golang `text/template` template which is

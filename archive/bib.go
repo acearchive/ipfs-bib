@@ -8,6 +8,7 @@ import (
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -68,9 +69,15 @@ func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*Downloade
 					return nil, err
 				}
 
+				bibFileName := filepath.Base(bibFilePath)
+				if bibFileName == "." {
+					bibFileName = ""
+				}
+
 				return &DownloadedContent{
 					Content:   fileContent,
 					MediaType: bibMediaType,
+					FileName:  bibFileName,
 					Origin:    ContentOriginLocal,
 				}, nil
 			}

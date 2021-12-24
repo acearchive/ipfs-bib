@@ -76,5 +76,6 @@ func (s *MonolithHandler) Handle(_ context.Context, response *DownloadResponse) 
 	return &SourceContent{
 		Content:   stdout,
 		MediaType: response.MediaType(),
+		FileName:  config.FileNameFromUrl(&response.Url, response.MediaType()),
 	}, nil
 }
