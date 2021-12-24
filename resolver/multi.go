@@ -5,7 +5,6 @@ import (
 	"errors"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/logging"
-	"github.com/frawleyskid/ipfs-bib/network"
 )
 
 type MultiResolver []SourceResolver
@@ -15,14 +14,15 @@ func (m MultiResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 		resolvedLocator, err := resolver.Resolve(ctx, locator)
 
 		switch {
-		case errors.Is(err, network.ErrHttp):
-			logging.Verbose.Println(err)
+		case errors.Is(err, ErrNotResolved):
+			continue
 		case err != nil:
-			return nil, err
-		case resolvedLocator != nil:
-			return resolvedLocator, nil
+			logging.Verbose.Println(err)
+			continue
 		}
+
+		return resolvedLocator, nil
 	}
 
-	return nil, nil
+	return nil, ErrNotResolved
 }

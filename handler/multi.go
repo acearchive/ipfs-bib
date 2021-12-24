@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"github.com/frawleyskid/ipfs-bib/logging"
-	"github.com/frawleyskid/ipfs-bib/network"
 )
 
 type MultiHandler []DownloadHandler
@@ -14,14 +13,15 @@ func (m MultiHandler) Handle(ctx context.Context, response *DownloadResponse) (*
 		content, err := handler.Handle(ctx, response)
 
 		switch {
-		case errors.Is(err, network.ErrHttp):
-			logging.Verbose.Println(err)
+		case errors.Is(err, ErrNotHandled):
+			continue
 		case err != nil:
-			return nil, err
-		case content != nil:
-			return content, nil
+			logging.Verbose.Println(err)
+			continue
 		}
+
+		return content, nil
 	}
 
-	return nil, nil
+	return nil, ErrNotHandled
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/frawleyskid/ipfs-bib/network"
 	"net/url"
 	"text/template"
@@ -96,7 +97,8 @@ func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 	for _, resolvedLocator := range resolvedLocators {
 		exists, err := u.httpClient.CheckExists(ctx, &resolvedLocator.Url)
 		if err != nil {
-			return nil, err
+			logging.Verbose.Println(err)
+			continue
 		}
 
 		if exists {
@@ -104,5 +106,5 @@ func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 		}
 	}
 
-	return nil, nil
+	return nil, ErrNotResolved
 }

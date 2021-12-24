@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"mime"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 )
 
 const ContentTypeHeader = "Content-Type"
+
+var ErrNotHandled = errors.New("handler could not handle content")
 
 type SourceContent struct {
 	Content   []byte
@@ -60,7 +63,7 @@ func (s *DirectHandler) Handle(_ context.Context, response *DownloadResponse) (*
 type NoOpHandler struct{}
 
 func (n *NoOpHandler) Handle(_ context.Context, _ *DownloadResponse) (*SourceContent, error) {
-	return nil, nil
+	return nil, ErrNotHandled
 }
 
 func FromConfig(cfg *config.Config) DownloadHandler {

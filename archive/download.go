@@ -2,6 +2,7 @@ package archive
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/handler"
@@ -12,6 +13,8 @@ import (
 	"io"
 	"net/http"
 )
+
+var ErrNotDownloaded = errors.New("content not downloaded")
 
 type DownloadedContent struct {
 	Content   []byte
@@ -40,7 +43,9 @@ func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLoca
 	}
 
 	resolvedLocator, err := sourceResolver.Resolve(ctx, redirectedLocator)
-	if err != nil {
+	if errors.Is(err, resolver.ErrNotResolved) {
+		return nil, ErrNotDownloaded
+	} else if err != nil {
 		return nil, err
 	}
 
@@ -65,10 +70,10 @@ func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLoca
 	}
 
 	sourceContent, err := downloadHandler.Handle(ctx, downloadResponse)
-	if err != nil {
+	if errors.Is(err, handler.ErrNotHandled) {
+		return nil, ErrNotDownloaded
+	} else if err != nil {
 		return nil, err
-	} else if sourceContent == nil {
-		return nil, nil
 	}
 
 	return &DownloadedContent{
@@ -93,7 +98,10 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) ([]
 
 	for _, bibEntry := range bib.Entries {
 		locator, err := config.LocateEntry(bibEntry)
-		if err != nil {
+		if errors.Is(err, config.ErrCouldNotLocateEntry) {
+			logging.Verbose.Println(err)
+			continue
+		} else if err != nil {
 			return nil, err
 		}
 
@@ -109,6 +117,11 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) ([]
 
 		if locator != nil {
 			bibContent.Contents, err = client.Download(ctx, locator, downloadHandler, sourceResolver)
+			if errors.Is(err, ErrNotDownloaded) {
+				logging.Verbose.Println(err)
+			} else if err != nil {
+				return nil, err
+			}
 			if err != nil {
 				logging.Verbose.Println(err)
 			} else if bibContent.Contents != nil {

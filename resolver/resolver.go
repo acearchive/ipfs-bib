@@ -2,10 +2,13 @@ package resolver
 
 import (
 	"context"
+	"errors"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/network"
 	"net/url"
 )
+
+var ErrNotResolved = errors.New("content not resolved")
 
 type ContentOrigin string
 
@@ -29,7 +32,7 @@ func (DirectResolver) Resolve(_ context.Context, locator *config.SourceLocator) 
 type NoOpResolver struct{}
 
 func (NoOpResolver) Resolve(_ context.Context, _ *config.SourceLocator) (*ResolvedLocator, error) {
-	return nil, nil
+	return nil, ErrNotResolved
 }
 
 func FromConfig(cfg *config.Config) (SourceResolver, error) {

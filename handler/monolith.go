@@ -53,11 +53,11 @@ func NewMonolithHandler(cfg *config.Config) DownloadHandler {
 
 func (s *MonolithHandler) Handle(_ context.Context, response *DownloadResponse) (*SourceContent, error) {
 	if response.MediaType() != "text/html" {
-		return nil, nil
+		return nil, ErrNotHandled
 	}
 
 	if _, err := exec.LookPath(s.path); err != nil {
-		return nil, nil
+		return nil, err
 	}
 
 	args := make([]string, len(s.args))

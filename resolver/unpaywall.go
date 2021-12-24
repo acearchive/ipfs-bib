@@ -34,7 +34,7 @@ func NewUnpaywallResolver(httpClient *network.HttpClient, cfg *config.Config) So
 
 func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceLocator) (*ResolvedLocator, error) {
 	if locator.Doi == nil {
-		return nil, nil
+		return nil, ErrNotResolved
 	}
 
 	rawUrl := fmt.Sprintf("https://api.unpaywall.org/v2/%s?email=%s", *locator.Doi, url.QueryEscape(u.auth))
@@ -56,7 +56,7 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceL
 	}
 
 	if apiResponse.BestLocation.Url == "" {
-		return nil, nil
+		return nil, ErrNotResolved
 	}
 
 	resolvedUrl, err := url.Parse(apiResponse.BestLocation.Url)

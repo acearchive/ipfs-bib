@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"github.com/ipfs/go-cid"
 	"github.com/nickng/bibtex"
@@ -26,6 +27,8 @@ var doiPrefixes = []string{
 const doiUrlRegexMatchGroup = 3
 
 var doiUrlRegex = regexp.MustCompile(`^(https?://)?(dx\.)?doi\.org/(10\.[0-9]{4,}(\.[0-9]+)*/\S+)$`)
+
+var ErrCouldNotLocateEntry = errors.New("bitex entry has no URL or DOI")
 
 func FileNameFromUrl(sourceUrl *url.URL, mediaType string) string {
 	if sourceUrl == nil || mediaType == "" {
@@ -99,7 +102,7 @@ func LocateEntry(entry *bibtex.BibEntry) (*SourceLocator, error) {
 	}
 
 	if sourceUrl == nil {
-		return nil, nil
+		return nil, fmt.Errorf("%w: %s", ErrCouldNotLocateEntry, entry.CiteName)
 	} else {
 		return &SourceLocator{Url: *sourceUrl, Doi: sourceDoi}, nil
 	}

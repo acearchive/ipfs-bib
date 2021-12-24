@@ -2,6 +2,7 @@ package archive
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/handler"
@@ -304,7 +305,10 @@ citeMap:
 		bibContent := BibContents{Entry: citation.Entry}
 
 		locator, err := config.LocateEntry(&citation.Entry)
-		if err != nil {
+		if errors.Is(err, config.ErrCouldNotLocateEntry) {
+			logging.Verbose.Println(err)
+			locator = nil
+		} else if err != nil {
 			return nil, err
 		}
 

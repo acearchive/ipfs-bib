@@ -46,7 +46,7 @@ func NewEmbeddedHandler(userAgent string, mediaTypes []string) DownloadHandler {
 
 func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse) (*SourceContent, error) {
 	if response.MediaType() != "text/html" {
-		return nil, nil
+		return nil, ErrNotHandled
 	}
 
 	rootNode, err := html.Parse(bytes.NewReader(response.Body))
@@ -59,7 +59,7 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 	})
 
 	if documentNode == nil {
-		return nil, nil
+		return nil, ErrNotHandled
 	}
 
 	if embeddedNode := e.tagFinder.Find(documentNode); embeddedNode != nil {
@@ -70,13 +70,13 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 			if value := FindAttr(embeddedNode, "data"); value != nil {
 				rawContentUrl = *value
 			} else {
-				return nil, nil
+				return nil, ErrNotHandled
 			}
 		case atom.Embed:
 			if value := FindAttr(embeddedNode, "src"); value != nil {
 				rawContentUrl = *value
 			} else {
-				return nil, nil
+				return nil, ErrNotHandled
 			}
 		default:
 			panic("unexpected html node")
@@ -117,5 +117,5 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 		}, nil
 	}
 
-	return nil, nil
+	return nil, ErrNotHandled
 }
