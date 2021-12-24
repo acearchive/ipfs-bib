@@ -5,12 +5,13 @@ import (
 	"github.com/ipfs/go-cid"
 	"github.com/nickng/bibtex"
 	"net/url"
+	"regexp"
 	"strings"
 )
 
-const CanonicalDoiPrefix = "https://doi.org/"
+const canonicalDoiUrlPrefix = "https://doi.org/"
 
-var DoiPrefixes = []string{
+var doiPrefixes = []string{
 	"doi:",
 	"http://doi.org/",
 	"https://doi.org/",
@@ -19,6 +20,10 @@ var DoiPrefixes = []string{
 	"https://dx.doi.org/",
 	"dx.doi.org/",
 }
+
+const doiUrlRegexMatchGroup = 3
+
+var doiUrlRegex = regexp.MustCompile(`^(https?://)?(dx\.)?doi\.org/(10\.[0-9]{4,}(\.[0-9]+)*/\S+)$`)
 
 type SourceLocator struct {
 	Url url.URL
@@ -44,14 +49,14 @@ func LocateEntry(entry *bibtex.BibEntry) (*SourceLocator, error) {
 	if rawDoi := BibEntryField(entry, "doi"); rawDoi != nil {
 		doi := *rawDoi
 
-		for _, doiPrefix := range DoiPrefixes {
+		for _, doiPrefix := range doiPrefixes {
 			if strings.HasPrefix(*rawDoi, doiPrefix) {
 				doi = strings.TrimPrefix(*rawDoi, doiPrefix)
 				break
 			}
 		}
 
-		sourceUrl, err = url.Parse(CanonicalDoiPrefix + doi)
+		sourceUrl, err = url.Parse(canonicalDoiUrlPrefix + doi)
 		if err != nil {
 			return nil, err
 		}
@@ -63,6 +68,13 @@ func LocateEntry(entry *bibtex.BibEntry) (*SourceLocator, error) {
 		sourceUrl, err = url.Parse(*rawUrl)
 		if err != nil {
 			return nil, err
+		}
+
+		if sourceDoi == nil {
+			// Attempt to extract the DOI from the URL.
+			if matches := doiUrlRegex.FindStringSubmatch(*rawUrl); matches != nil {
+				sourceDoi = &matches[doiUrlRegexMatchGroup]
+			}
 		}
 	}
 
