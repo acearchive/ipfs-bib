@@ -13,6 +13,7 @@ const outputIndent = "  "
 type ArchivedOutput struct {
 	CiteName      string `json:"citeName"`
 	Doi           string `json:"doi"`
+	MediaType     string `json:"mediaType"`
 	FileCid       string `json:"fileCid"`
 	FileName      string `json:"fileName"`
 	DirectoryCid  string `json:"directoryCid"`
@@ -59,6 +60,7 @@ func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (
 			archivedEntries = append(archivedEntries, ArchivedOutput{
 				CiteName:      bibContent.Entry.CiteName,
 				Doi:           entryDoi,
+				MediaType:     bibContent.Contents.MediaType,
 				FileCid:       bibLocation.FileCid.String(),
 				FileName:      bibLocation.FileName,
 				DirectoryCid:  bibLocation.DirectoryCid.String(),
