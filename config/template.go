@@ -56,8 +56,8 @@ func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, mediaType string) (
 	}
 
 	return &SourcePath{
-		FileName:      string(filenameBytes.Bytes()),
-		DirectoryName: string(directoryBytes.Bytes()),
+		FileName:      filenameBytes.String(),
+		DirectoryName: directoryBytes.String(),
 	}, nil
 }
 

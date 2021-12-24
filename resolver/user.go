@@ -75,12 +75,12 @@ func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 				return nil, err
 			}
 
-			if rawProxyUrlBytes.Len() == 0 {
+			rawProxyUrl := rawProxyUrlBytes.String()
+
+			if rawProxyUrl == "" {
 				// We skip templates that resolve to an empty string.
 				continue
 			}
-
-			rawProxyUrl := string(rawProxyUrlBytes.Bytes())
 
 			proxyUrl, err := url.Parse(rawProxyUrl)
 			if err != nil {

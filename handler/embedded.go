@@ -77,7 +77,6 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 			} else {
 				return nil, nil
 			}
-			rawContentUrl = *FindAttr(embeddedNode, "src")
 		default:
 			panic("unexpected html node")
 		}
