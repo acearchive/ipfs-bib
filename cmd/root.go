@@ -106,12 +106,12 @@ var (
 				}
 			}
 
-			if jsonOutput {
-				output, err := archive.NewOutput(cfg, contents, location)
-				if err != nil {
-					return err
-				}
+			output, err := archive.NewOutput(cfg, contents, location)
+			if err != nil {
+				return err
+			}
 
+			if jsonOutput {
 				jsonOutput, err := output.FormatJson()
 				if err != nil {
 					return err
@@ -119,7 +119,7 @@ var (
 
 				fmt.Println(jsonOutput)
 			} else {
-				fmt.Println(location.Root.String())
+				output.PrettyPrint()
 			}
 
 			return nil
