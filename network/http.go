@@ -36,6 +36,10 @@ func init() {
 	}
 }
 
+func responseIsOk(status int) bool {
+	return status >= 200 && status < 300
+}
+
 func NewClient(userAgent string) *HttpClient {
 	return &HttpClient{
 		client:    &defaultClient,
@@ -69,8 +73,8 @@ func (c *HttpClient) RequestWithHeaders(ctx context.Context, method string, requ
 		return nil, fmt.Errorf("%w: %v", ErrHttp, err)
 	}
 
-	if ok := response.StatusCode >= 200 && response.StatusCode < 300; !ok {
-		return nil, &ErrHttpStatus{
+	if !responseIsOk(response.StatusCode) {
+		return nil, &HttpStatusError{
 			Method:     method,
 			Url:        *requestUrl,
 			StatusCode: response.StatusCode,
@@ -89,8 +93,12 @@ func (c *HttpClient) ResolveRedirect(ctx context.Context, sourceUrl *url.URL) (*
 		return nil
 	}
 
-	_, err := c.Request(ctx, http.MethodGet, sourceUrl)
+	response, err := c.Request(ctx, http.MethodGet, sourceUrl)
 	if err != nil {
+		return nil, err
+	}
+
+	if err := response.Body.Close(); err != nil {
 		return nil, err
 	}
 
@@ -100,17 +108,24 @@ func (c *HttpClient) ResolveRedirect(ctx context.Context, sourceUrl *url.URL) (*
 }
 
 func (c *HttpClient) CheckExists(ctx context.Context, sourceUrl *url.URL) (bool, error) {
-	_, err := c.Request(ctx, http.MethodGet, sourceUrl)
-	if err != nil {
-		httpErr := ErrHttpStatus{}
-		if errors.As(err, &httpErr) && httpErr.StatusCode == http.StatusNotFound {
-			return false, nil
-		} else {
-			return false, err
+	response, err := c.Request(ctx, http.MethodGet, sourceUrl)
+
+	defer func() {
+		if closeErr := response.Body.Close(); closeErr != nil {
+			err = closeErr
 		}
+	}()
+
+	if err != nil {
+		httpErr := HttpStatusError{}
+		if errors.As(err, &httpErr) && httpErr.StatusCode == http.StatusNotFound {
+			err = nil
+		}
+
+		return false, err
 	}
 
-	return true, nil
+	return true, err
 }
 
 func UnmarshalJson(response *http.Response, value interface{}) error {
@@ -132,17 +147,17 @@ func UnmarshalJson(response *http.Response, value interface{}) error {
 
 var ErrHttp = errors.New("http error")
 
-type ErrHttpStatus struct {
+type HttpStatusError struct {
 	Method     string
 	Url        url.URL
 	Status     string
 	StatusCode int
 }
 
-func (e ErrHttpStatus) Error() string {
+func (e HttpStatusError) Error() string {
 	return fmt.Sprintf("%s \"%s\" returned %s", e.Method, e.Url.String(), e.Status)
 }
 
-func (e ErrHttpStatus) Unwrap() error {
+func (e HttpStatusError) Unwrap() error {
 	return ErrHttp
 }

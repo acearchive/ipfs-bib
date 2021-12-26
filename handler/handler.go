@@ -28,19 +28,16 @@ type DownloadResponse struct {
 
 func (r *DownloadResponse) MediaType() string {
 	mediaType, _, err := mime.ParseMediaType(r.Header.Get(ContentTypeHeader))
-	if err == nil {
-		if mediaType == config.DefaultMediaType && r.MediaTypeHint != nil {
-			return *r.MediaTypeHint
-		} else {
-			return mediaType
-		}
-	} else {
-		if r.MediaTypeHint != nil {
-			return *r.MediaTypeHint
-		} else {
-			return config.DefaultMediaType
-		}
+	switch {
+	case err != nil && r.MediaTypeHint != nil:
+		return *r.MediaTypeHint
+	case err != nil:
+		return config.DefaultMediaType
+	case mediaType == config.DefaultMediaType && r.MediaTypeHint != nil:
+		return *r.MediaTypeHint
 	}
+
+	return mediaType
 }
 
 type DownloadHandler interface {
@@ -58,7 +55,7 @@ func NewDirectHandler(excludeTypes []string) *DirectHandler {
 func (s *DirectHandler) Handle(_ context.Context, response *DownloadResponse) (*SourceContent, error) {
 	for _, mediaType := range s.excludeTypes {
 		if response.MediaType() == mediaType {
-			return nil, nil
+			return nil, ErrNotHandled
 		}
 	}
 

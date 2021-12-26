@@ -1,0 +1,34 @@
+linters:
+  enable:
+    - bodyclose
+    - contextcheck
+    - dupl
+    - errname
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - forcetypeassert
+    - goconst
+    - gocritic
+    - godox
+    - goerr113
+    - gofmt
+    - gomnd
+    - ifshort
+    - makezero
+    - misspell
+    - nestif
+    - nilerr
+    - nilnil
+    - noctx
+    - prealloc
+    - predeclared
+    - testpackage
+    - unconvert
+    - unparam
+    - varnamelen
+    - whitespace
+
+linters-settings:
+  exhaustive:
+    default-signifies-exhaustive: true

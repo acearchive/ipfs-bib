@@ -64,9 +64,8 @@ func (s *MonolithHandler) Handle(_ context.Context, response *DownloadResponse) 
 		return nil, ErrNotHandled
 	}
 
-	args := make([]string, len(s.args))
-	copy(args, s.args)
-
+	var args []string
+	args = append(args, s.args...)
 	args = append(args, "--base-url", response.Url.String(), "-")
 
 	command := exec.Command(s.path, args...)

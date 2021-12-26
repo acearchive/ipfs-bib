@@ -95,9 +95,9 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) ([]
 		return nil, err
 	}
 
-	var bibContentsList []BibContents
+	bibContentsList := make([]BibContents, len(bib.Entries))
 
-	for _, bibEntry := range bib.Entries {
+	for entryIndex, bibEntry := range bib.Entries {
 		locator, err := config.LocateEntry(bibEntry)
 		if errors.Is(err, config.ErrCouldNotLocateEntry) {
 			logging.Verbose.Println(err)
@@ -110,7 +110,7 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) ([]
 
 		bibContent.Contents, err = ReadLocalBibSource(bibEntry, preferredMediaTypes)
 		if err == nil {
-			bibContentsList = append(bibContentsList, bibContent)
+			bibContentsList[entryIndex] = bibContent
 			continue
 		} else if !errors.Is(err, ErrNoSource) {
 			logging.Verbose.Println(err)
@@ -119,7 +119,7 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) ([]
 		if locator != nil {
 			bibContent.Contents, err = client.Download(ctx, locator, downloadHandler, sourceResolver)
 			if err == nil {
-				bibContentsList = append(bibContentsList, bibContent)
+				bibContentsList[entryIndex] = bibContent
 				continue
 			} else if !errors.Is(err, ErrNoSource) {
 				logging.Verbose.Println(err)
@@ -128,14 +128,14 @@ func FromBibtex(ctx context.Context, cfg *config.Config, bib *bibtex.BibTex) ([]
 
 		bibContent.Contents, err = ReadLocalBibSource(bibEntry, contingencyMediaTypes)
 		if err == nil {
-			bibContentsList = append(bibContentsList, bibContent)
+			bibContentsList[entryIndex] = bibContent
 			continue
 		} else if !errors.Is(err, ErrNoSource) {
 			logging.Verbose.Println(err)
 		}
 
 		bibContent.Contents = nil
-		bibContentsList = append(bibContentsList, bibContent)
+		bibContentsList[entryIndex] = bibContent
 
 		logging.Error.Println(fmt.Sprintf("Could not find a source for citation: %s", bibEntry.CiteName))
 	}

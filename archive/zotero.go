@@ -125,6 +125,10 @@ func (c *ZoteroClient) downloadCiteList(ctx context.Context, groupId string) (ma
 			return nil, err
 		}
 
+		if err := apiResponse.Body.Close(); err != nil {
+			return nil, err
+		}
+
 		startIndex += len(currentResponseList)
 		citeResponseList = append(citeResponseList, currentResponseList...)
 
@@ -169,6 +173,10 @@ func (c *ZoteroClient) downloadAttachmentList(ctx context.Context, groupId strin
 		var currentResponseList []zoteroAttachmentResponse
 
 		if err := network.UnmarshalJson(apiResponse, &currentResponseList); err != nil {
+			return nil, err
+		}
+
+		if err := apiResponse.Body.Close(); err != nil {
 			return nil, err
 		}
 
@@ -240,7 +248,7 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 	switch attachment.LinkMode {
 	case LinkModeLinkedUrl, LinkModeImportedUrl:
 		if attachment.Url == nil {
-			return nil, nil
+			return nil, ErrNoSource
 		} else {
 			downloadUrl = attachment.Url
 		}

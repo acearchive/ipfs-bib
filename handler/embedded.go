@@ -64,60 +64,64 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 		return nil, ErrNotHandled
 	}
 
-	if embeddedNode := e.tagFinder.Find(documentNode); embeddedNode != nil {
-		var rawContentUrl string
-
-		switch embeddedNode.DataAtom {
-		case atom.Object:
-			if value := FindAttr(embeddedNode, "data"); value != nil {
-				rawContentUrl = *value
-			} else {
-				return nil, ErrNotHandled
-			}
-		case atom.Embed:
-			if value := FindAttr(embeddedNode, "src"); value != nil {
-				rawContentUrl = *value
-			} else {
-				return nil, ErrNotHandled
-			}
-		default:
-			logging.Error.Fatal("unexpected HTML node type")
-		}
-
-		contentUrl, err := url.Parse(rawContentUrl)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
-		}
-
-		if contentUrl.Scheme == "" {
-			contentUrl.Scheme = DefaultUrlScheme
-		}
-
-		embeddedResponse, err := e.httpClient.Request(ctx, http.MethodGet, contentUrl)
-		if err != nil {
-			return nil, err
-		}
-
-		content, err := io.ReadAll(embeddedResponse.Body)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
-		}
-
-		if err := embeddedResponse.Body.Close(); err != nil {
-			return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
-		}
-
-		mediaType := FindAttr(embeddedNode, "type")
-		if mediaType == nil {
-			logging.Error.Fatal("node unexpectedly missing its content type")
-		}
-
-		return &SourceContent{
-			Content:   content,
-			MediaType: *mediaType,
-			FileName:  config.InferFileName(contentUrl, *mediaType, embeddedResponse.Header),
-		}, nil
+	embeddedNode := e.tagFinder.Find(documentNode)
+	if embeddedNode == nil {
+		return nil, ErrNotHandled
 	}
 
-	return nil, ErrNotHandled
+	var rawContentUrl string
+
+	switch embeddedNode.DataAtom {
+	case atom.Object:
+		if value := FindAttr(embeddedNode, "data"); value != nil {
+			rawContentUrl = *value
+		} else {
+			return nil, ErrNotHandled
+		}
+	case atom.Embed:
+		if value := FindAttr(embeddedNode, "src"); value != nil {
+			rawContentUrl = *value
+		} else {
+			return nil, ErrNotHandled
+		}
+	default:
+		logging.Error.Fatal("unexpected HTML node type")
+	}
+
+	contentUrl, err := url.Parse(rawContentUrl)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
+	}
+
+	if contentUrl.Scheme == "" {
+		contentUrl.Scheme = DefaultUrlScheme
+	}
+
+	embeddedResponse, err := e.httpClient.Request(ctx, http.MethodGet, contentUrl)
+	if err != nil {
+		return nil, err
+	}
+
+	content, err := io.ReadAll(embeddedResponse.Body)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
+	}
+
+	if err := embeddedResponse.Body.Close(); err != nil {
+		return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
+	}
+
+	var mediaType string
+
+	if maybeMediaType := FindAttr(embeddedNode, "type"); maybeMediaType != nil {
+		mediaType = *maybeMediaType
+	} else {
+		logging.Error.Fatal("node unexpectedly missing its content type")
+	}
+
+	return &SourceContent{
+		Content:   content,
+		MediaType: mediaType,
+		FileName:  config.InferFileName(contentUrl, mediaType, embeddedResponse.Header),
+	}, nil
 }

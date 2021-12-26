@@ -33,7 +33,7 @@ func FromToml(file string) (*Config, error) {
 	viper.SetConfigName("default")
 	viper.SetConfigType("toml")
 	if err := viper.ReadConfig(bytes.NewReader(defaultConfig)); err != nil {
-		logging.Error.Fatalf("could not parse default config: %w", err)
+		logging.Error.Fatalf("could not parse default config: %v", err)
 	}
 
 	viper.SetConfigName("config")
@@ -45,7 +45,7 @@ func FromToml(file string) (*Config, error) {
 
 	config := Config{}
 	if err := viper.Unmarshal(&config); err != nil {
-		logging.Error.Fatal("could not unmarshal config file: %w", err)
+		logging.Error.Fatalf("could not unmarshal config file: %v", err)
 	}
 
 	return &config, nil

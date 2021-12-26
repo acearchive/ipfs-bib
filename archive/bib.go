@@ -17,6 +17,7 @@ const (
 	bibtexFileSeparator      = ";"
 	bibtexFileFieldSeparator = ":"
 	bibtexFileFields         = 3
+	defaultBibtexPermissions = 0644
 )
 
 const ContentOriginLocal resolver.ContentOrigin = "local"
@@ -124,5 +125,5 @@ func UpdateBib(bib *bibtex.BibTex, gateway *string, location *Location) error {
 }
 
 func WriteBib(bib *bibtex.BibTex, file string) error {
-	return os.WriteFile(file, []byte(bib.PrettyString()), 0644)
+	return os.WriteFile(file, []byte(bib.PrettyString()), defaultBibtexPermissions)
 }
