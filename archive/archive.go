@@ -16,14 +16,14 @@ type BibContents struct {
 	Contents *DownloadedContent
 }
 
-func ContentsToBibtex(contents []BibContents) *bibtex.BibTex {
+func ContentsToBibtex(contents []BibContents) bibtex.BibTex {
 	bib := bibtex.NewBibTex()
 
 	for i := range contents {
 		bib.Entries = append(bib.Entries, &contents[i].Entry)
 	}
 
-	return bib
+	return *bib
 }
 
 type Location struct {
@@ -31,10 +31,10 @@ type Location struct {
 	Entries map[BibCiteName]config.BibEntryLocation
 }
 
-func storeContents(ctx context.Context, cfg *config.Config, contents []BibContents, sourceStore *store.SourceStore) (*Location, error) {
+func storeContents(ctx context.Context, cfg config.Config, contents []BibContents, sourceStore *store.SourceStore) (Location, error) {
 	sourcePathTemplate, err := config.NewSourcePathTemplate(cfg)
 	if err != nil {
-		return nil, err
+		return Location{}, err
 	}
 
 	locationMap := make(map[BibCiteName]config.BibEntryLocation)
@@ -44,7 +44,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents []BibConten
 			continue
 		}
 
-		sourcePath := sourcePathTemplate.Execute(&bibContent.Entry, bibContent.Contents.FileName, bibContent.Contents.MediaType)
+		sourcePath := sourcePathTemplate.Execute(bibContent.Entry, bibContent.Contents.FileName, bibContent.Contents.MediaType)
 
 		bibSource := &config.BibSource{
 			Content:       bibContent.Contents.Content,
@@ -54,7 +54,7 @@ func storeContents(ctx context.Context, cfg *config.Config, contents []BibConten
 
 		entryLocation, err := sourceStore.AddSource(ctx, bibSource)
 		if err != nil {
-			return nil, err
+			return Location{}, err
 		}
 
 		locationMap[bibContent.Entry.CiteName] = *entryLocation
@@ -62,54 +62,54 @@ func storeContents(ctx context.Context, cfg *config.Config, contents []BibConten
 
 	rootCid, err := sourceStore.Write(ctx)
 	if err != nil {
-		return nil, err
+		return Location{}, err
 	}
 
-	return &Location{
+	return Location{
 		Root:    rootCid,
 		Entries: locationMap,
 	}, nil
 }
 
-func ToCar(ctx context.Context, cfg *config.Config, carPath string, contents []BibContents) (*Location, error) {
+func ToCar(ctx context.Context, cfg config.Config, carPath string, contents []BibContents) (Location, error) {
 	dagService := store.CarService()
 
 	sourceStore, err := store.NewSourceStore(ctx, dagService)
 	if err != nil {
-		return nil, err
+		return Location{}, err
 	}
 
 	location, err := storeContents(ctx, cfg, contents, sourceStore)
 	if err != nil {
-		return nil, err
+		return Location{}, err
 	}
 
 	if err := store.WriteCar(ctx, dagService, location.Root, carPath, cfg.Ipfs.CarVersion == "2"); err != nil {
-		return nil, err
+		return Location{}, err
 	}
 
 	return location, nil
 }
 
-func ToNode(ctx context.Context, cfg *config.Config, pin bool, contents []BibContents) (*Location, error) {
+func ToNode(ctx context.Context, cfg config.Config, pin bool, contents []BibContents) (Location, error) {
 	ipfsApi, err := store.IpfsClient(cfg.Ipfs.Api)
 	if err != nil {
-		return nil, err
+		return Location{}, err
 	}
 
 	sourceStore, err := store.NewSourceStore(ctx, ipfsApi.Dag())
 	if err != nil {
-		return nil, err
+		return Location{}, err
 	}
 
 	location, err := storeContents(ctx, cfg, contents, sourceStore)
 	if err != nil {
-		return nil, err
+		return Location{}, err
 	}
 
 	if pin {
 		if err := store.Pin(ctx, ipfsApi, location.Root, true); err != nil {
-			return nil, err
+			return Location{}, err
 		}
 	}
 

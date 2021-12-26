@@ -57,11 +57,11 @@ func NewUserResolver(httpClient *network.HttpClient, cfg []config.Resolver) (Sou
 	return &UserResolver{httpClient, rules}, nil
 }
 
-func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocator) (*ResolvedLocator, error) {
+func (u *UserResolver) Resolve(ctx context.Context, locator config.SourceLocator) (ResolvedLocator, error) {
 	var resolvedLocators []ResolvedLocator
 
 	for _, rule := range u.rules {
-		templateInput := config.NewProxySchemeInput(locator, &rule.Filter)
+		templateInput := config.NewProxySchemeInput(locator, rule.Filter)
 		if templateInput == nil {
 			// This source was excluded by the hostname include/exclude rules.
 			continue
@@ -93,16 +93,16 @@ func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 	}
 
 	for _, resolvedLocator := range resolvedLocators {
-		exists, err := u.httpClient.CheckExists(ctx, &resolvedLocator.Url)
+		exists, err := u.httpClient.CheckExists(ctx, resolvedLocator.Url)
 		if err != nil {
 			logging.Verbose.Println(err)
 			continue
 		}
 
 		if exists {
-			return &resolvedLocator, nil
+			return resolvedLocator, nil
 		}
 	}
 
-	return nil, ErrNotResolved
+	return ResolvedLocator{}, ErrNotResolved
 }

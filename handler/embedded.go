@@ -32,7 +32,7 @@ func NewEmbeddedHandler(userAgent string, mediaTypes []string) DownloadHandler {
 	}
 
 	return &EmbeddedHandler{
-		tagFinder: NewTagFinder(func(node *html.Node) bool {
+		tagFinder: NewTagFinder(func(node html.Node) bool {
 			if node.Type == html.ElementNode && (node.DataAtom == atom.Object || node.DataAtom == atom.Embed) {
 				if value := FindAttr(node, "type"); value != nil {
 					_, exists := mediaTypeSet[*value]
@@ -46,27 +46,30 @@ func NewEmbeddedHandler(userAgent string, mediaTypes []string) DownloadHandler {
 	}
 }
 
-func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse) (*SourceContent, error) {
+func (e *EmbeddedHandler) Handle(ctx context.Context, response DownloadResponse) (SourceContent, error) {
 	if response.MediaType() != "text/html" {
-		return nil, ErrNotHandled
+		return SourceContent{}, ErrNotHandled
 	}
 
 	rootNode, err := html.Parse(bytes.NewReader(response.Body))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
+		return SourceContent{}, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
 	}
 
-	documentNode := FindChild(rootNode, func(node *html.Node) bool {
+	documentNode := FindChild(*rootNode, func(node html.Node) bool {
 		return node.Type == html.ElementNode && node.DataAtom == atom.Html
 	})
 
 	if documentNode == nil {
-		return nil, ErrNotHandled
+		return SourceContent{}, ErrNotHandled
 	}
 
-	embeddedNode := e.tagFinder.Find(documentNode)
-	if embeddedNode == nil {
-		return nil, ErrNotHandled
+	var embeddedNode html.Node
+
+	if node := e.tagFinder.Find(documentNode); node != nil {
+		embeddedNode = *node
+	} else {
+		return SourceContent{}, ErrNotHandled
 	}
 
 	var rawContentUrl string
@@ -76,13 +79,13 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 		if value := FindAttr(embeddedNode, "data"); value != nil {
 			rawContentUrl = *value
 		} else {
-			return nil, ErrNotHandled
+			return SourceContent{}, ErrNotHandled
 		}
 	case atom.Embed:
 		if value := FindAttr(embeddedNode, "src"); value != nil {
 			rawContentUrl = *value
 		} else {
-			return nil, ErrNotHandled
+			return SourceContent{}, ErrNotHandled
 		}
 	default:
 		logging.Error.Fatal("unexpected HTML node type")
@@ -90,25 +93,25 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 
 	contentUrl, err := url.Parse(rawContentUrl)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
+		return SourceContent{}, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
 	}
 
 	if contentUrl.Scheme == "" {
 		contentUrl.Scheme = DefaultUrlScheme
 	}
 
-	embeddedResponse, err := e.httpClient.Request(ctx, http.MethodGet, contentUrl)
+	embeddedResponse, err := e.httpClient.Request(ctx, http.MethodGet, *contentUrl)
 	if err != nil {
-		return nil, err
+		return SourceContent{}, err
 	}
 
 	content, err := io.ReadAll(embeddedResponse.Body)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
+		return SourceContent{}, fmt.Errorf("%w: %v", network.ErrHttp, err)
 	}
 
 	if err := embeddedResponse.Body.Close(); err != nil {
-		return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
+		return SourceContent{}, fmt.Errorf("%w: %v", network.ErrHttp, err)
 	}
 
 	var mediaType string
@@ -119,7 +122,7 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 		logging.Error.Fatal("node unexpectedly missing its content type")
 	}
 
-	return &SourceContent{
+	return SourceContent{
 		Content:   content,
 		MediaType: mediaType,
 		FileName:  config.InferFileName(contentUrl, mediaType, embeddedResponse.Header),

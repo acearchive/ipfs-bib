@@ -14,22 +14,22 @@ var defaultConfig []byte
 
 var ErrInvalidConfigFile = errors.New("could not parse config file")
 
-func LoadDefault() (*Config, error) {
+func LoadDefault() (Config, error) {
 	viper.SetConfigName("default")
 	viper.SetConfigType("toml")
 	if err := viper.ReadConfig(bytes.NewReader(defaultConfig)); err != nil {
-		return nil, err
+		return Config{}, err
 	}
 
 	config := Config{}
 	if err := viper.Unmarshal(&config); err != nil {
-		return nil, err
+		return Config{}, err
 	}
 
-	return &config, nil
+	return config, nil
 }
 
-func FromToml(file string) (*Config, error) {
+func FromToml(file string) (Config, error) {
 	viper.SetConfigName("default")
 	viper.SetConfigType("toml")
 	if err := viper.ReadConfig(bytes.NewReader(defaultConfig)); err != nil {
@@ -40,7 +40,7 @@ func FromToml(file string) (*Config, error) {
 	viper.SetConfigType("toml")
 	viper.SetConfigFile(file)
 	if err := viper.ReadInConfig(); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidConfigFile, err)
+		return Config{}, fmt.Errorf("%w: %v", ErrInvalidConfigFile, err)
 	}
 
 	config := Config{}
@@ -48,5 +48,5 @@ func FromToml(file string) (*Config, error) {
 		logging.Error.Fatalf("could not unmarshal config file: %v", err)
 	}
 
-	return &config, nil
+	return config, nil
 }

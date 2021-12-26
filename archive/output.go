@@ -37,7 +37,7 @@ type Output struct {
 	NotArchived   []NotArchivedOutput `json:"notArchived"`
 }
 
-func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (*Output, error) {
+func NewOutput(cfg config.Config, contents []BibContents, location Location) (Output, error) {
 	var (
 		archivedEntries    []ArchivedOutput
 		notArchivedEntries []NotArchivedOutput
@@ -55,8 +55,10 @@ func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (
 		if hasLocation && bibContent.Contents != nil {
 			gatewayUrl, err := bibLocation.GatewayUrl(cfg.Ipfs.Gateway)
 			if err != nil {
-				return nil, err
+				return Output{}, err
 			}
+
+			ipfsUrl := bibLocation.IpfsUrl()
 
 			archivedEntries = append(archivedEntries, ArchivedOutput{
 				CiteName:      bibContent.Entry.CiteName,
@@ -66,7 +68,7 @@ func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (
 				FileName:      bibLocation.FileName,
 				DirectoryCid:  bibLocation.DirectoryCid.String(),
 				DirectoryName: bibLocation.DirectoryName,
-				IpfsUrl:       bibLocation.IpfsUrl().String(),
+				IpfsUrl:       ipfsUrl.String(),
 				GatewayUrl:    gatewayUrl.String(),
 				ContentOrigin: string(bibContent.Contents.Origin),
 			})
@@ -78,7 +80,7 @@ func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (
 		}
 	}
 
-	return &Output{
+	return Output{
 		Cid:           location.Root.String(),
 		TotalEntries:  len(contents),
 		TotalArchived: len(archivedEntries),
@@ -90,11 +92,11 @@ func NewOutput(cfg *config.Config, contents []BibContents, location *Location) (
 func prettyPrintLine(title string, value string) {
 	titleFunc := color.New(color.Bold).SprintFunc()
 	if _, err := fmt.Fprintf(color.Output, "%s: %s\n", titleFunc(title), value); err != nil {
-		panic(err)
+		logging.Error.Fatal(err)
 	}
 }
 
-func (o *Output) PrettyPrint() {
+func (o Output) PrettyPrint() {
 	good := color.New(color.FgGreen).SprintFunc()
 	bad := color.New(color.FgRed).SprintFunc()
 
@@ -104,7 +106,7 @@ func (o *Output) PrettyPrint() {
 	prettyPrintLine("Entries not archived", bad(o.TotalEntries-o.TotalArchived))
 }
 
-func (o *Output) JsonPrint() {
+func (o Output) JsonPrint() {
 	marshalledOutput, err := json.MarshalIndent(o, "", outputIndent)
 	if err != nil {
 		logging.Error.Fatal(err)

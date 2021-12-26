@@ -8,6 +8,7 @@ import (
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
 	"io"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -31,7 +32,7 @@ var (
 	contingencyMediaTypes = []string{"text/html"}
 )
 
-func ParseBibtex(bibPath string) (*bibtex.BibTex, error) {
+func ParseBibtex(bibPath string) (bibtex.BibTex, error) {
 	var (
 		bibFile io.ReadCloser
 		err     error
@@ -42,26 +43,26 @@ func ParseBibtex(bibPath string) (*bibtex.BibTex, error) {
 	} else {
 		bibFile, err = os.Open(bibPath)
 		if err != nil {
-			return nil, err
+			return bibtex.BibTex{}, err
 		}
 	}
 
 	bib, err := bibtex.Parse(bibFile)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrParseBibtex, err)
+		return bibtex.BibTex{}, fmt.Errorf("%w: %v", ErrParseBibtex, err)
 	}
 
 	if err := bibFile.Close(); err != nil {
-		return nil, err
+		return bibtex.BibTex{}, err
 	}
 
-	return bib, nil
+	return *bib, nil
 }
 
-func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*DownloadedContent, error) {
+func ReadLocalBibSource(entry bibtex.BibEntry, mediaTypes []string) (DownloadedContent, error) {
 	rawField := config.BibEntryField(entry, "file")
 	if rawField == nil {
-		return nil, ErrNoSource
+		return DownloadedContent{}, ErrNoSource
 	}
 
 	rawFiles := strings.Split(*rawField, bibtexFileSeparator)
@@ -81,7 +82,7 @@ func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*Downloade
 					logging.Verbose.Println(fmt.Sprintf("Local source file does not exist: %s", bibFilePath))
 					continue
 				} else if err != nil {
-					return nil, err
+					return DownloadedContent{}, err
 				}
 
 				bibFileName := filepath.Base(bibFilePath)
@@ -89,7 +90,7 @@ func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*Downloade
 					bibFileName = ""
 				}
 
-				return &DownloadedContent{
+				return DownloadedContent{
 					Content:   fileContent,
 					MediaType: bibMediaType,
 					FileName:  bibFileName,
@@ -99,31 +100,36 @@ func ReadLocalBibSource(entry *bibtex.BibEntry, mediaTypes []string) (*Downloade
 		}
 	}
 
-	return nil, ErrNoSource
+	return DownloadedContent{}, ErrNoSource
 }
 
-func UpdateBib(bib *bibtex.BibTex, gateway *string, location *Location) error {
+func UpdateBib(bib bibtex.BibTex, gateway *string, location Location) error {
 	for _, entry := range bib.Entries {
 		entryLocation, ok := location.Entries[entry.CiteName]
 		if !ok {
 			continue
 		}
 
+		var (
+			updatedUrl url.URL
+			err        error
+		)
+
 		if gateway == nil {
-			entry.Fields["url"] = bibtex.NewBibConst(entryLocation.IpfsUrl().String())
+			updatedUrl = entryLocation.IpfsUrl()
 		} else {
-			gatewayUrl, err := entryLocation.GatewayUrl(*gateway)
+			updatedUrl, err = entryLocation.GatewayUrl(*gateway)
 			if err != nil {
 				return err
 			}
-
-			entry.Fields["url"] = bibtex.NewBibConst(gatewayUrl.String())
 		}
+
+		entry.Fields["url"] = bibtex.NewBibConst(updatedUrl.String())
 	}
 
 	return nil
 }
 
-func WriteBib(bib *bibtex.BibTex, file string) error {
+func WriteBib(bib bibtex.BibTex, file string) error {
 	return os.WriteFile(file, []byte(bib.PrettyString()), defaultBibtexPermissions)
 }

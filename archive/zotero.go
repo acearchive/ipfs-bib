@@ -45,7 +45,7 @@ type ZoteroAttachment struct {
 	FileName  string
 }
 
-func (a *ZoteroAttachment) IsPreferred() bool {
+func (a ZoteroAttachment) IsPreferred() bool {
 	for _, preferredMediaType := range preferredMediaTypes {
 		if a.MediaType == preferredMediaType {
 			return true
@@ -62,17 +62,17 @@ type zoteroCitationResponse struct {
 	Bib string    `json:"biblatex"`
 }
 
-func (r *zoteroCitationResponse) ParseBib() (*bibtex.BibEntry, error) {
+func (r zoteroCitationResponse) ParseBib() (bibtex.BibEntry, error) {
 	bib, err := bibtex.Parse(strings.NewReader(r.Bib))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
+		return bibtex.BibEntry{}, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
 	}
 
 	if len(bib.Entries) == 0 {
-		return nil, fmt.Errorf("%w: %s", network.ErrUnmarshalResponse, "invalid bibtex entry")
+		return bibtex.BibEntry{}, fmt.Errorf("%w: %s", network.ErrUnmarshalResponse, "invalid bibtex entry")
 	}
 
-	return bib.Entries[0], nil
+	return *bib.Entries[0], nil
 }
 
 type zoteroAttachmentDataResponse struct {
@@ -114,7 +114,7 @@ func (c *ZoteroClient) downloadCiteList(ctx context.Context, groupId string) (ma
 			logging.Error.Fatal(fmt.Errorf("%w: %v", network.ErrInvalidApiUrl, err))
 		}
 
-		apiResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, apiUrl, zoteroHeaders)
+		apiResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, *apiUrl, zoteroHeaders)
 		if err != nil {
 			return nil, err
 		}
@@ -146,7 +146,7 @@ func (c *ZoteroClient) downloadCiteList(ctx context.Context, groupId string) (ma
 			continue
 		}
 
-		citeMap[citeResponse.Key] = *bib
+		citeMap[citeResponse.Key] = bib
 	}
 
 	return citeMap, nil
@@ -165,7 +165,7 @@ func (c *ZoteroClient) downloadAttachmentList(ctx context.Context, groupId strin
 			logging.Error.Fatal(fmt.Errorf("%w: %v", network.ErrInvalidApiUrl, err))
 		}
 
-		apiResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, apiUrl, zoteroHeaders)
+		apiResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, *apiUrl, zoteroHeaders)
 		if err != nil {
 			return nil, err
 		}
@@ -239,7 +239,7 @@ func (c *ZoteroClient) DownloadCitations(ctx context.Context, groupId string) ([
 	return citations, nil
 }
 
-func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, attachment *ZoteroAttachment) (*DownloadedContent, error) {
+func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, attachment ZoteroAttachment) (DownloadedContent, error) {
 	var (
 		downloadUrl *url.URL
 		err         error
@@ -248,7 +248,7 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 	switch attachment.LinkMode {
 	case LinkModeLinkedUrl, LinkModeImportedUrl:
 		if attachment.Url == nil {
-			return nil, ErrNoSource
+			return DownloadedContent{}, ErrNoSource
 		} else {
 			downloadUrl = attachment.Url
 		}
@@ -261,18 +261,18 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 		}
 	}
 
-	downloadResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, downloadUrl, zoteroHeaders)
+	downloadResponse, err := c.httpClient.RequestWithHeaders(ctx, http.MethodGet, *downloadUrl, zoteroHeaders)
 	if err != nil {
-		return nil, err
+		return DownloadedContent{}, err
 	}
 
 	content, err := io.ReadAll(downloadResponse.Body)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
+		return DownloadedContent{}, fmt.Errorf("%w: %v", network.ErrHttp, err)
 	}
 
 	if err := downloadResponse.Body.Close(); err != nil {
-		return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
+		return DownloadedContent{}, fmt.Errorf("%w: %v", network.ErrHttp, err)
 	}
 
 	filename := attachment.FileName
@@ -280,7 +280,7 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 		filename = config.InferFileName(attachment.Url, attachment.MediaType, downloadResponse.Header)
 	}
 
-	return &DownloadedContent{
+	return DownloadedContent{
 		Content:   content,
 		MediaType: attachment.MediaType,
 		Origin:    ContentOriginZotero,
@@ -288,7 +288,7 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 	}, nil
 }
 
-func FromZotero(ctx context.Context, cfg *config.Config, groupId string) ([]BibContents, error) {
+func FromZotero(ctx context.Context, cfg config.Config, groupId string) ([]BibContents, error) {
 	httpClient := network.NewClient(cfg.Archive.UserAgent)
 
 	zoteroClient := NewZoteroClient(httpClient)
@@ -307,29 +307,30 @@ func FromZotero(ctx context.Context, cfg *config.Config, groupId string) ([]BibC
 		return nil, err
 	}
 
-	var bibContentsList []BibContents
+	bibContentsList := make([]BibContents, len(citations))
 
 citeMap:
-	for _, citation := range citations {
+	for citationIndex, citation := range citations {
 		bibContent := BibContents{Entry: citation.Entry}
 
-		locator, err := config.LocateEntry(&citation.Entry)
-		if errors.Is(err, config.ErrCouldNotLocateEntry) {
-			logging.Verbose.Println(err)
-			locator = nil
-		} else if err != nil {
-			return nil, err
-		}
+		var sourceLocator *config.SourceLocator
 
-		if locator != nil {
+		switch locator, err := config.LocateEntry(citation.Entry); {
+		case errors.Is(err, config.ErrCouldNotLocateEntry):
+			logging.Verbose.Println(err)
+		case err != nil:
+			return nil, err
+		default:
+			sourceLocator = &locator
 			bibContent.Doi = locator.Doi
 		}
 
 		for _, attachment := range citation.Attachments {
 			if attachment.IsPreferred() {
-				bibContent.Contents, err = zoteroClient.DownloadAttachment(ctx, groupId, &attachment)
+				contents, err := zoteroClient.DownloadAttachment(ctx, groupId, attachment)
 				if err == nil {
-					bibContentsList = append(bibContentsList, bibContent)
+					bibContent.Contents = &contents
+					bibContentsList[citationIndex] = bibContent
 					continue citeMap
 				} else if !errors.Is(err, ErrNoSource) {
 					logging.Verbose.Println(err)
@@ -337,10 +338,11 @@ citeMap:
 			}
 		}
 
-		if locator != nil {
-			bibContent.Contents, err = downloadClient.Download(ctx, locator, downloadHandler, sourceResolver)
+		if sourceLocator != nil {
+			contents, err := downloadClient.Download(ctx, *sourceLocator, downloadHandler, sourceResolver)
 			if err == nil {
-				bibContentsList = append(bibContentsList, bibContent)
+				bibContent.Contents = &contents
+				bibContentsList[citationIndex] = bibContent
 				continue
 			} else if !errors.Is(err, ErrNoSource) {
 				logging.Verbose.Println(err)
@@ -348,17 +350,17 @@ citeMap:
 		}
 
 		if len(citation.Attachments) > 0 {
-			bibContent.Contents, err = zoteroClient.DownloadAttachment(ctx, groupId, &citation.Attachments[0])
+			contents, err := zoteroClient.DownloadAttachment(ctx, groupId, citation.Attachments[0])
 			if err == nil {
-				bibContentsList = append(bibContentsList, bibContent)
+				bibContent.Contents = &contents
+				bibContentsList[citationIndex] = bibContent
 				continue
 			} else if !errors.Is(err, ErrNoSource) {
 				logging.Verbose.Println(err)
 			}
 		}
 
-		bibContent.Contents = nil
-		bibContentsList = append(bibContentsList, bibContent)
+		bibContentsList[citationIndex] = bibContent
 
 		logging.Error.Println(fmt.Sprintf("Could not find a source for citation: %s", citation.Entry.CiteName))
 	}

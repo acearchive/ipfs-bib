@@ -27,7 +27,7 @@ type UnpaywallResolver struct {
 	auth       string
 }
 
-func NewUnpaywallResolver(httpClient *network.HttpClient, cfg *config.Config) SourceResolver {
+func NewUnpaywallResolver(httpClient *network.HttpClient, cfg config.Config) SourceResolver {
 	if !cfg.Unpaywall.Enabled || cfg.Unpaywall.Email == "" {
 		return &NoOpResolver{}
 	}
@@ -35,9 +35,9 @@ func NewUnpaywallResolver(httpClient *network.HttpClient, cfg *config.Config) So
 	return &UnpaywallResolver{httpClient, cfg.Unpaywall.Email}
 }
 
-func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceLocator) (*ResolvedLocator, error) {
+func (u *UnpaywallResolver) Resolve(ctx context.Context, locator config.SourceLocator) (ResolvedLocator, error) {
 	if locator.Doi == nil {
-		return nil, ErrNotResolved
+		return ResolvedLocator{}, ErrNotResolved
 	}
 
 	rawUrl := fmt.Sprintf("https://api.unpaywall.org/v2/%s?email=%s", url.PathEscape(*locator.Doi), url.QueryEscape(u.auth))
@@ -47,29 +47,29 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceL
 		logging.Error.Fatal(fmt.Errorf("%w: %v", network.ErrInvalidApiUrl, err))
 	}
 
-	response, err := u.httpClient.Request(ctx, http.MethodGet, requestUrl)
+	response, err := u.httpClient.Request(ctx, http.MethodGet, *requestUrl)
 	if err != nil {
-		return nil, err
+		return ResolvedLocator{}, err
 	}
 
 	apiResponse := unpaywallResponse{}
 
 	if err := network.UnmarshalJson(response, &apiResponse); err != nil {
-		return nil, err
+		return ResolvedLocator{}, err
 	}
 
 	if err := response.Body.Close(); err != nil {
-		return nil, err
+		return ResolvedLocator{}, err
 	}
 
 	if apiResponse.BestLocation.Url == "" {
-		return nil, ErrNotResolved
+		return ResolvedLocator{}, ErrNotResolved
 	}
 
 	resolvedUrl, err := url.Parse(apiResponse.BestLocation.Url)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
+		return ResolvedLocator{}, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
 	}
 
-	return &ResolvedLocator{Url: *resolvedUrl, Origin: ContentOriginUnpaywall, MediaTypeHint: &unpaywallMediaTypeHint}, nil
+	return ResolvedLocator{Url: *resolvedUrl, Origin: ContentOriginUnpaywall, MediaTypeHint: &unpaywallMediaTypeHint}, nil
 }

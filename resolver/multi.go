@@ -9,7 +9,7 @@ import (
 
 type MultiResolver []SourceResolver
 
-func (m MultiResolver) Resolve(ctx context.Context, locator *config.SourceLocator) (*ResolvedLocator, error) {
+func (m MultiResolver) Resolve(ctx context.Context, locator config.SourceLocator) (ResolvedLocator, error) {
 	for _, resolver := range m {
 		resolvedLocator, err := resolver.Resolve(ctx, locator)
 
@@ -24,5 +24,5 @@ func (m MultiResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 		return resolvedLocator, nil
 	}
 
-	return nil, ErrNotResolved
+	return ResolvedLocator{}, ErrNotResolved
 }

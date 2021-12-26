@@ -8,7 +8,7 @@ import (
 
 type MultiHandler []DownloadHandler
 
-func (m MultiHandler) Handle(ctx context.Context, response *DownloadResponse) (*SourceContent, error) {
+func (m MultiHandler) Handle(ctx context.Context, response DownloadResponse) (SourceContent, error) {
 	for _, handler := range m {
 		content, err := handler.Handle(ctx, response)
 
@@ -23,5 +23,5 @@ func (m MultiHandler) Handle(ctx context.Context, response *DownloadResponse) (*
 		return content, nil
 	}
 
-	return nil, ErrNotHandled
+	return SourceContent{}, ErrNotHandled
 }

@@ -21,28 +21,28 @@ type ResolvedLocator struct {
 }
 
 type SourceResolver interface {
-	Resolve(ctx context.Context, locator *config.SourceLocator) (*ResolvedLocator, error)
+	Resolve(ctx context.Context, locator config.SourceLocator) (ResolvedLocator, error)
 }
 
 type DirectResolver struct{}
 
-func (DirectResolver) Resolve(_ context.Context, locator *config.SourceLocator) (*ResolvedLocator, error) {
-	return &ResolvedLocator{Url: locator.Url, Origin: ContentOriginUrl, MediaTypeHint: nil}, nil
+func (DirectResolver) Resolve(_ context.Context, locator config.SourceLocator) (ResolvedLocator, error) {
+	return ResolvedLocator{Url: locator.Url, Origin: ContentOriginUrl, MediaTypeHint: nil}, nil
 }
 
 type NoOpResolver struct{}
 
-func (NoOpResolver) Resolve(_ context.Context, _ *config.SourceLocator) (*ResolvedLocator, error) {
-	return nil, ErrNotResolved
+func (NoOpResolver) Resolve(_ context.Context, _ config.SourceLocator) (ResolvedLocator, error) {
+	return ResolvedLocator{}, ErrNotResolved
 }
 
-func FromConfig(cfg *config.Config) (SourceResolver, error) {
+func FromConfig(cfg config.Config) (SourceResolver, error) {
 	userResolver, err := NewUserResolver(network.NewClient(cfg.Archive.UserAgent), cfg.Resolvers)
 	if err != nil {
 		return nil, err
 	}
 
-	return &MultiResolver{
+	return MultiResolver{
 		NewUnpaywallResolver(network.NewClient(cfg.Archive.UserAgent), cfg),
 		userResolver,
 		DirectResolver{},

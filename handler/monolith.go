@@ -16,7 +16,7 @@ type MonolithHandler struct {
 	args []string
 }
 
-func NewMonolithHandler(cfg *config.Config) DownloadHandler {
+func NewMonolithHandler(cfg config.Config) DownloadHandler {
 	if !cfg.Snapshot.Enabled {
 		return &NoOpHandler{}
 	}
@@ -55,13 +55,13 @@ func NewMonolithHandler(cfg *config.Config) DownloadHandler {
 	return &MonolithHandler{path: cfg.Snapshot.Path, args: args}
 }
 
-func (s *MonolithHandler) Handle(_ context.Context, response *DownloadResponse) (*SourceContent, error) {
+func (s *MonolithHandler) Handle(_ context.Context, response DownloadResponse) (SourceContent, error) {
 	if response.MediaType() != "text/html" {
-		return nil, ErrNotHandled
+		return SourceContent{}, ErrNotHandled
 	}
 
 	if _, err := exec.LookPath(s.path); err != nil {
-		return nil, ErrNotHandled
+		return SourceContent{}, ErrNotHandled
 	}
 
 	var args []string
@@ -73,10 +73,10 @@ func (s *MonolithHandler) Handle(_ context.Context, response *DownloadResponse) 
 
 	stdout, err := command.Output()
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrMonolith, err)
+		return SourceContent{}, fmt.Errorf("%w: %v", ErrMonolith, err)
 	}
 
-	return &SourceContent{
+	return SourceContent{
 		Content:   stdout,
 		MediaType: response.MediaType(),
 		FileName:  config.InferFileName(&response.Url, response.MediaType(), response.Header),

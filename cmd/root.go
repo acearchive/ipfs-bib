@@ -36,7 +36,7 @@ var (
 			}
 
 			var (
-				cfg *config.Config
+				cfg config.Config
 				err error
 			)
 
@@ -53,7 +53,7 @@ var (
 			}
 
 			var (
-				bib      *bibtex.BibTex
+				bib      bibtex.BibTex
 				contents []archive.BibContents
 			)
 
@@ -76,7 +76,7 @@ var (
 				}
 			}
 
-			var location *archive.Location
+			var location archive.Location
 
 			if carPath == "" {
 				location, err = archive.ToNode(ctx, cfg, pinSources, contents)

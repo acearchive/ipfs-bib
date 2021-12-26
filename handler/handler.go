@@ -26,7 +26,7 @@ type DownloadResponse struct {
 	MediaTypeHint *string
 }
 
-func (r *DownloadResponse) MediaType() string {
+func (r DownloadResponse) MediaType() string {
 	mediaType, _, err := mime.ParseMediaType(r.Header.Get(ContentTypeHeader))
 	switch {
 	case err != nil && r.MediaTypeHint != nil:
@@ -41,7 +41,7 @@ func (r *DownloadResponse) MediaType() string {
 }
 
 type DownloadHandler interface {
-	Handle(ctx context.Context, response *DownloadResponse) (*SourceContent, error)
+	Handle(ctx context.Context, response DownloadResponse) (SourceContent, error)
 }
 
 type DirectHandler struct {
@@ -52,14 +52,14 @@ func NewDirectHandler(excludeTypes []string) *DirectHandler {
 	return &DirectHandler{excludeTypes}
 }
 
-func (s *DirectHandler) Handle(_ context.Context, response *DownloadResponse) (*SourceContent, error) {
+func (s *DirectHandler) Handle(_ context.Context, response DownloadResponse) (SourceContent, error) {
 	for _, mediaType := range s.excludeTypes {
 		if response.MediaType() == mediaType {
-			return nil, ErrNotHandled
+			return SourceContent{}, ErrNotHandled
 		}
 	}
 
-	return &SourceContent{
+	return SourceContent{
 		Content:   response.Body,
 		MediaType: response.MediaType(),
 		FileName:  config.InferFileName(&response.Url, response.MediaType(), response.Header),
@@ -68,11 +68,11 @@ func (s *DirectHandler) Handle(_ context.Context, response *DownloadResponse) (*
 
 type NoOpHandler struct{}
 
-func (n *NoOpHandler) Handle(_ context.Context, _ *DownloadResponse) (*SourceContent, error) {
-	return nil, ErrNotHandled
+func (n *NoOpHandler) Handle(_ context.Context, _ DownloadResponse) (SourceContent, error) {
+	return SourceContent{}, ErrNotHandled
 }
 
-func FromConfig(cfg *config.Config) DownloadHandler {
+func FromConfig(cfg config.Config) DownloadHandler {
 	var excludeTypes []string
 
 	if !cfg.Snapshot.Enabled {

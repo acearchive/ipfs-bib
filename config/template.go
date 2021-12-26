@@ -27,21 +27,21 @@ type SourcePathTemplate struct {
 	directory template.Template
 }
 
-func NewSourcePathTemplate(cfg *Config) (*SourcePathTemplate, error) {
+func NewSourcePathTemplate(cfg Config) (SourcePathTemplate, error) {
 	filename, err := template.New("archive.file-name").Funcs(sprig.TxtFuncMap()).Parse(cfg.Archive.FileName)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidTemplate, err)
+		return SourcePathTemplate{}, fmt.Errorf("%w: %v", ErrInvalidTemplate, err)
 	}
 
 	directory, err := template.New("archive.directory-name").Funcs(sprig.TxtFuncMap()).Parse(cfg.Archive.DirectoryName)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidTemplate, err)
+		return SourcePathTemplate{}, fmt.Errorf("%w: %v", ErrInvalidTemplate, err)
 	}
 
-	return &SourcePathTemplate{filename: *filename, directory: *directory}, nil
+	return SourcePathTemplate{filename: *filename, directory: *directory}, nil
 }
 
-func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, originalFileName string, mediaType string) *SourcePath {
+func (s SourcePathTemplate) Execute(entry bibtex.BibEntry, originalFileName string, mediaType string) SourcePath {
 	var filenameBytes bytes.Buffer
 	var directoryBytes bytes.Buffer
 
@@ -56,7 +56,7 @@ func (s *SourcePathTemplate) Execute(entry *bibtex.BibEntry, originalFileName st
 		logging.Error.Fatal(err)
 	}
 
-	return &SourcePath{
+	return SourcePath{
 		FileName:      filenameBytes.String(),
 		DirectoryName: directoryBytes.String(),
 	}
@@ -70,7 +70,7 @@ type fileNameTemplateInput struct {
 	Extension string
 }
 
-func newFileNameTemplateInput(entry *bibtex.BibEntry, originalFileName string, mediaType string) *fileNameTemplateInput {
+func newFileNameTemplateInput(entry bibtex.BibEntry, originalFileName string, mediaType string) fileNameTemplateInput {
 	mediaType, _, err := mime.ParseMediaType(mediaType)
 	if err != nil {
 		mediaType = DefaultMediaType
@@ -101,7 +101,7 @@ func newFileNameTemplateInput(entry *bibtex.BibEntry, originalFileName string, m
 		input.Fields[key] = value.String()
 	}
 
-	return &input
+	return input
 }
 
 type directoryNameTemplateInput struct {
@@ -110,7 +110,7 @@ type directoryNameTemplateInput struct {
 	Fields   map[string]interface{}
 }
 
-func newDirectoryNameTemplateInput(entry *bibtex.BibEntry) *directoryNameTemplateInput {
+func newDirectoryNameTemplateInput(entry bibtex.BibEntry) directoryNameTemplateInput {
 	input := directoryNameTemplateInput{
 		CiteName: entry.CiteName,
 		Type:     entry.Type,
@@ -121,7 +121,7 @@ func newDirectoryNameTemplateInput(entry *bibtex.BibEntry) *directoryNameTemplat
 		input.Fields[key] = value.String()
 	}
 
-	return &input
+	return input
 }
 
 type ProxySchemeUrl struct {
@@ -141,7 +141,7 @@ type HostnameFilter struct {
 	Exclude []string
 }
 
-func NewProxySchemeInput(locator *SourceLocator, filter *HostnameFilter) *ProxySchemeInput {
+func NewProxySchemeInput(locator SourceLocator, filter HostnameFilter) *ProxySchemeInput {
 	useProxy := len(filter.Include) == 0
 
 	for _, includeHost := range filter.Include {
