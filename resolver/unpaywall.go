@@ -12,6 +12,8 @@ import (
 
 const ContentOriginUnpaywall ContentOrigin = "unpaywall"
 
+var unpaywallMediaTypeHint = "application/pdf"
+
 type unpaywallLocationResponse struct {
 	Url string `json:"url_for_pdf"`
 }
@@ -65,5 +67,5 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator *config.SourceL
 		return nil, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
 	}
 
-	return &ResolvedLocator{Url: *resolvedUrl, Origin: ContentOriginUnpaywall}, nil
+	return &ResolvedLocator{Url: *resolvedUrl, Origin: ContentOriginUnpaywall, MediaTypeHint: &unpaywallMediaTypeHint}, nil
 }

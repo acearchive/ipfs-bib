@@ -64,9 +64,10 @@ func (c DownloadClient) Download(ctx context.Context, locator *config.SourceLoca
 	}
 
 	downloadResponse := &handler.DownloadResponse{
-		Url:    resolvedLocator.Url,
-		Header: response.Header,
-		Body:   responseBody,
+		Url:           resolvedLocator.Url,
+		Header:        response.Header,
+		Body:          responseBody,
+		MediaTypeHint: resolvedLocator.MediaTypeHint,
 	}
 
 	sourceContent, err := downloadHandler.Handle(ctx, downloadResponse)

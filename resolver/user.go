@@ -86,7 +86,7 @@ func (u *UserResolver) Resolve(ctx context.Context, locator *config.SourceLocato
 				continue
 			}
 
-			resolvedLocator := ResolvedLocator{Url: *proxyUrl, Origin: ContentOriginUser}
+			resolvedLocator := ResolvedLocator{Url: *proxyUrl, Origin: ContentOriginUser, MediaTypeHint: nil}
 
 			resolvedLocators = append(resolvedLocators, resolvedLocator)
 		}

@@ -15,8 +15,9 @@ type ContentOrigin string
 const ContentOriginUrl ContentOrigin = "url"
 
 type ResolvedLocator struct {
-	Url    url.URL
-	Origin ContentOrigin
+	Url           url.URL
+	Origin        ContentOrigin
+	MediaTypeHint *string
 }
 
 type SourceResolver interface {
@@ -26,7 +27,7 @@ type SourceResolver interface {
 type DirectResolver struct{}
 
 func (DirectResolver) Resolve(_ context.Context, locator *config.SourceLocator) (*ResolvedLocator, error) {
-	return &ResolvedLocator{Url: locator.Url, Origin: ContentOriginUrl}, nil
+	return &ResolvedLocator{Url: locator.Url, Origin: ContentOriginUrl, MediaTypeHint: nil}, nil
 }
 
 type NoOpResolver struct{}

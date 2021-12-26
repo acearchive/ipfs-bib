@@ -20,17 +20,26 @@ type SourceContent struct {
 }
 
 type DownloadResponse struct {
-	Url    url.URL
-	Body   []byte
-	Header http.Header
+	Url           url.URL
+	Body          []byte
+	Header        http.Header
+	MediaTypeHint *string
 }
 
 func (r *DownloadResponse) MediaType() string {
 	mediaType, _, err := mime.ParseMediaType(r.Header.Get(ContentTypeHeader))
 	if err == nil {
-		return mediaType
+		if mediaType == config.DefaultMediaType && r.MediaTypeHint != nil {
+			return *r.MediaTypeHint
+		} else {
+			return mediaType
+		}
 	} else {
-		return config.DefaultMediaType
+		if r.MediaTypeHint != nil {
+			return *r.MediaTypeHint
+		} else {
+			return config.DefaultMediaType
+		}
 	}
 }
 
