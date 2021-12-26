@@ -7,6 +7,7 @@ import (
 	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,6 +21,8 @@ const (
 
 const ContentOriginLocal resolver.ContentOrigin = "local"
 
+const stdinFileName = "-"
+
 var ErrParseBibtex = errors.New("error parsing bibtex")
 
 var (
@@ -28,9 +31,18 @@ var (
 )
 
 func ParseBibtex(bibPath string) (*bibtex.BibTex, error) {
-	bibFile, err := os.Open(bibPath)
-	if err != nil {
-		return nil, err
+	var (
+		bibFile io.ReadCloser
+		err     error
+	)
+
+	if bibPath == stdinFileName {
+		bibFile = os.Stdin
+	} else {
+		bibFile, err = os.Open(bibPath)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	bib, err := bibtex.Parse(bibFile)

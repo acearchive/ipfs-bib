@@ -24,6 +24,7 @@ var (
 	rootCmd = &cobra.Command{
 		Use:                   "ipfs-bib [options] <bibtex_file>",
 		Short:                 "A tool for hosting bibliographic references on IPFS",
+		Long:                  "A tool for hosting bibliographic references on IPFS.\n\nThis command accepts the path of a bibtex/biblatex file, or `-` to read from stdin.\nIf --zotero is passed, this accepts a Zotero group ID instead.",
 		Args:                  cobra.ExactArgs(1),
 		Version:               "0.1.0",
 		DisableFlagsInUseLine: true,
@@ -135,6 +136,6 @@ func init() {
 	rootCmd.Flags().StringVar(&carPath, "car", "", "Rather than add the sources to an IPFS node, export them as a CAR archive.")
 	rootCmd.Flags().BoolVar(&pinSources, "pin", false, "Pin the source files when adding them to the IPFS node.")
 	rootCmd.Flags().BoolVar(&jsonOutput, "json", false, "Produce machine-readable JSON output.")
-	rootCmd.Flags().BoolVar(&useZotero, "zotero", false, "Pull references from a public Zotero library. Instead of the path of a local bibtex file, pass a Zotero group ID.")
+	rootCmd.Flags().BoolVar(&useZotero, "zotero", false, "Pull references from a public Zotero library. Pass a Zotero group ID.")
 	rootCmd.Flags().BoolVarP(&verboseOutput, "verbose", "v", false, "Print verbose output.")
 }
