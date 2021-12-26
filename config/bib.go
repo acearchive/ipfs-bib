@@ -57,12 +57,12 @@ func fileNameFromUrl(sourceUrl *url.URL, mediaType string) *string {
 }
 
 func fileNameFromContentDisposition(header http.Header) *string {
-	disposition, params, err := mime.ParseMediaType(header.Get(contentDispositionHeader))
+	_, params, err := mime.ParseMediaType(header.Get(contentDispositionHeader))
 	if err != nil {
 		return nil
 	}
 
-	if filename, ok := params["filename"]; disposition == "attachment" && ok {
+	if filename, ok := params["filename"]; ok {
 		return &filename
 	} else {
 		return nil
