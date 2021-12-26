@@ -7,13 +7,17 @@ import (
 	"github.com/frawleyskid/ipfs-bib/logging"
 	"github.com/nickng/bibtex"
 	"mime"
+	"net/http"
 	"net/url"
 	"path"
 	"regexp"
 	"strings"
 )
 
-const canonicalDoiUrlPrefix = "https://doi.org/"
+const (
+	canonicalDoiUrlPrefix    = "https://doi.org/"
+	contentDispositionHeader = "Content-Disposition"
+)
 
 var doiPrefixes = []string{
 	"doi:",
@@ -34,22 +38,47 @@ var (
 	ErrMalformedGateway    = errors.New("IPFS gateway is malformed")
 )
 
-func FileNameFromUrl(sourceUrl *url.URL, mediaType string) string {
+func fileNameFromUrl(sourceUrl *url.URL, mediaType string) *string {
 	if sourceUrl == nil || mediaType == "" {
-		return ""
+		return nil
 	}
 
 	fileName := path.Base(sourceUrl.Path)
 	if fileName == "." {
-		return ""
+		return nil
 	}
 
 	fileExtension := path.Ext(fileName)
 	if mime.TypeByExtension(fileExtension) == mediaType {
-		return fileName
+		return &fileName
 	} else {
-		return ""
+		return nil
 	}
+}
+
+func fileNameFromContentDisposition(header http.Header) *string {
+	disposition, params, err := mime.ParseMediaType(header.Get(contentDispositionHeader))
+	if err != nil {
+		return nil
+	}
+
+	if filename, ok := params["filename"]; disposition == "attachment" && ok {
+		return &filename
+	} else {
+		return nil
+	}
+}
+
+func InferFileName(sourceUrl *url.URL, mediaType string, header http.Header) string {
+	if filename := fileNameFromContentDisposition(header); filename != nil {
+		return *filename
+	}
+
+	if filename := fileNameFromUrl(sourceUrl, mediaType); filename != nil {
+		return *filename
+	}
+
+	return ""
 }
 
 type SourceLocator struct {

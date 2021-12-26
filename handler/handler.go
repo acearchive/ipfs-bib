@@ -56,7 +56,7 @@ func (s *DirectHandler) Handle(_ context.Context, response *DownloadResponse) (*
 	return &SourceContent{
 		Content:   response.Body,
 		MediaType: response.MediaType(),
-		FileName:  config.FileNameFromUrl(&response.Url, response.MediaType()),
+		FileName:  config.InferFileName(&response.Url, response.MediaType(), response.Header),
 	}, nil
 }
 

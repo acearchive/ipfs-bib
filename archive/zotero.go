@@ -193,17 +193,12 @@ func (c *ZoteroClient) downloadAttachmentList(ctx context.Context, groupId strin
 			attachmentUrl = nil
 		}
 
-		fileName := attachmentResponse.Data.FileName
-		if fileName == "" {
-			fileName = config.FileNameFromUrl(attachmentUrl, attachmentResponse.Data.MediaType)
-		}
-
 		attachment := ZoteroAttachment{
 			Key:       attachmentResponse.Key,
 			Url:       attachmentUrl,
 			LinkMode:  attachmentResponse.Data.LinkMode,
 			MediaType: attachmentResponse.Data.MediaType,
-			FileName:  fileName,
+			FileName:  attachmentResponse.Data.FileName,
 		}
 
 		attachmentMap[attachmentResponse.Data.CitationKey] = append(attachmentMap[attachmentResponse.Data.CitationKey], attachment)
@@ -272,11 +267,16 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 		return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
 	}
 
+	filename := attachment.FileName
+	if filename == "" {
+		filename = config.InferFileName(attachment.Url, attachment.MediaType, downloadResponse.Header)
+	}
+
 	return &DownloadedContent{
 		Content:   content,
 		MediaType: attachment.MediaType,
 		Origin:    ContentOriginZotero,
-		FileName:  attachment.FileName,
+		FileName:  filename,
 	}, nil
 }
 

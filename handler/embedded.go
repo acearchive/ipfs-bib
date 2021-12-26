@@ -93,17 +93,17 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 			contentUrl.Scheme = DefaultUrlScheme
 		}
 
-		response, err := e.httpClient.Request(ctx, http.MethodGet, contentUrl)
+		embeddedResponse, err := e.httpClient.Request(ctx, http.MethodGet, contentUrl)
 		if err != nil {
 			return nil, err
 		}
 
-		content, err := io.ReadAll(response.Body)
+		content, err := io.ReadAll(embeddedResponse.Body)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
 		}
 
-		if err := response.Body.Close(); err != nil {
+		if err := embeddedResponse.Body.Close(); err != nil {
 			return nil, fmt.Errorf("%w: %v", network.ErrHttp, err)
 		}
 
@@ -115,7 +115,7 @@ func (e *EmbeddedHandler) Handle(ctx context.Context, response *DownloadResponse
 		return &SourceContent{
 			Content:   content,
 			MediaType: *mediaType,
-			FileName:  config.FileNameFromUrl(contentUrl, *mediaType),
+			FileName:  config.InferFileName(contentUrl, *mediaType, embeddedResponse.Header),
 		}, nil
 	}
 
