@@ -32,6 +32,10 @@ type Location struct {
 }
 
 func storeContents(ctx context.Context, cfg config.Config, contents []BibContents, sourceStore *store.SourceStore) (Location, error) {
+	// We may have multiple contents with the same bibtex cite name, so we need
+	// to deduplicate them by choosing the "best" contents for a given cite name.
+	deduplicatedContents := DeduplicateContents(contents)
+
 	sourcePathTemplate, err := config.NewSourcePathTemplate(cfg)
 	if err != nil {
 		return Location{}, err
@@ -39,7 +43,7 @@ func storeContents(ctx context.Context, cfg config.Config, contents []BibContent
 
 	locationMap := make(map[BibCiteName]config.BibEntryLocation)
 
-	for _, bibContent := range contents {
+	for _, bibContent := range deduplicatedContents {
 		if bibContent.Contents == nil {
 			continue
 		}

@@ -112,7 +112,7 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex) ([]Bi
 			bibContent.Doi = locator.Doi
 		}
 
-		contents, err := ReadLocalBibSource(*bibEntry, preferredMediaTypes)
+		contents, err := ReadLocalBibSource(*bibEntry, true)
 		if err == nil {
 			bibContent.Contents = &contents
 			bibContentsList[entryIndex] = bibContent
@@ -132,7 +132,7 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex) ([]Bi
 			}
 		}
 
-		contents, err = ReadLocalBibSource(*bibEntry, contingencyMediaTypes)
+		contents, err = ReadLocalBibSource(*bibEntry, false)
 		if err == nil {
 			bibContent.Contents = &contents
 			bibContentsList[entryIndex] = bibContent

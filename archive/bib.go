@@ -27,10 +27,17 @@ const stdinFileName = "-"
 
 var ErrParseBibtex = errors.New("error parsing bibtex")
 
-var (
-	preferredMediaTypes   = []string{"application/pdf"}
-	contingencyMediaTypes = []string{"text/html"}
-)
+var preferredMediaTypes = []string{"application/pdf"}
+
+func IsPreferredMediaType(mediaType string) bool {
+	for _, preferredMediaType := range preferredMediaTypes {
+		if mediaType == preferredMediaType {
+			return true
+		}
+	}
+
+	return false
+}
 
 func ParseBibtex(bibPath string) (bibtex.BibTex, error) {
 	var (
@@ -59,7 +66,7 @@ func ParseBibtex(bibPath string) (bibtex.BibTex, error) {
 	return *bib, nil
 }
 
-func ReadLocalBibSource(entry bibtex.BibEntry, mediaTypes []string) (DownloadedContent, error) {
+func ReadLocalBibSource(entry bibtex.BibEntry, preferredOnly bool) (DownloadedContent, error) {
 	rawField := config.BibEntryField(entry, "file")
 	if rawField == nil {
 		return DownloadedContent{}, ErrNoSource
@@ -75,29 +82,29 @@ func ReadLocalBibSource(entry bibtex.BibEntry, mediaTypes []string) (DownloadedC
 
 		bibFilePath, bibMediaType := rawFileFields[1], rawFileFields[2]
 
-		for _, mediaType := range mediaTypes {
-			if bibMediaType == mediaType {
-				fileContent, err := os.ReadFile(bibFilePath)
-				if errors.Is(err, os.ErrNotExist) {
-					logging.Verbose.Println(fmt.Sprintf("Local source file does not exist: %s", bibFilePath))
-					continue
-				} else if err != nil {
-					return DownloadedContent{}, err
-				}
-
-				bibFileName := filepath.Base(bibFilePath)
-				if bibFileName == "." {
-					bibFileName = ""
-				}
-
-				return DownloadedContent{
-					Content:   fileContent,
-					MediaType: bibMediaType,
-					FileName:  bibFileName,
-					Origin:    ContentOriginLocal,
-				}, nil
-			}
+		if preferredOnly && !IsPreferredMediaType(bibMediaType) {
+			continue
 		}
+
+		fileContent, err := os.ReadFile(bibFilePath)
+		if errors.Is(err, os.ErrNotExist) {
+			logging.Verbose.Println(fmt.Sprintf("Local source file does not exist: %s", bibFilePath))
+			continue
+		} else if err != nil {
+			return DownloadedContent{}, err
+		}
+
+		bibFileName := filepath.Base(bibFilePath)
+		if bibFileName == "." {
+			bibFileName = ""
+		}
+
+		return DownloadedContent{
+			Content:   fileContent,
+			MediaType: bibMediaType,
+			FileName:  bibFileName,
+			Origin:    ContentOriginLocal,
+		}, nil
 	}
 
 	return DownloadedContent{}, ErrNoSource

@@ -46,13 +46,7 @@ type ZoteroAttachment struct {
 }
 
 func (a ZoteroAttachment) IsPreferred() bool {
-	for _, preferredMediaType := range preferredMediaTypes {
-		if a.MediaType == preferredMediaType {
-			return true
-		}
-	}
-
-	return false
+	return IsPreferredMediaType(a.MediaType)
 }
 
 type ZoteroKey = string
