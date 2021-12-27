@@ -20,6 +20,7 @@ var (
 	jsonOutput    bool
 	useZotero     bool
 	verboseOutput bool
+	dryRun        bool
 
 	rootCmd = &cobra.Command{
 		Use:                   "ipfs-bib [options] <bibtex_file>",
@@ -78,12 +79,18 @@ var (
 
 			var location archive.Location
 
-			if carPath == "" {
+			switch {
+			case dryRun:
+				location, err = archive.ToNowhere(ctx, cfg, contents)
+				if err != nil {
+					return err
+				}
+			case carPath == "":
 				location, err = archive.ToNode(ctx, cfg, pinSources, contents)
 				if err != nil {
 					return err
 				}
-			} else {
+			default:
 				location, err = archive.ToCar(ctx, cfg, carPath, contents)
 				if err != nil {
 					return err
@@ -137,4 +144,5 @@ func init() {
 	rootCmd.Flags().BoolVar(&jsonOutput, "json", false, "Produce machine-readable JSON output.")
 	rootCmd.Flags().BoolVar(&useZotero, "zotero", false, "Pull references from a public Zotero library. Pass a Zotero group ID.")
 	rootCmd.Flags().BoolVarP(&verboseOutput, "verbose", "v", false, "Print verbose output.")
+	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Download sources, but don't add them to IPFS or export them as a CAR.")
 }

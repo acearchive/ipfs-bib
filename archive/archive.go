@@ -119,3 +119,19 @@ func ToNode(ctx context.Context, cfg config.Config, pin bool, contents []BibCont
 
 	return location, nil
 }
+
+func ToNowhere(ctx context.Context, cfg config.Config, contents []BibContents) (Location, error) {
+	dagService := store.CarService()
+
+	sourceStore, err := store.NewSourceStore(ctx, dagService)
+	if err != nil {
+		return Location{}, err
+	}
+
+	location, err := storeContents(ctx, cfg, contents, sourceStore)
+	if err != nil {
+		return Location{}, err
+	}
+
+	return location, nil
+}

@@ -19,4 +19,28 @@ to a [CAR archive](ipns://ipld.io/specs/transport/car/).
 - Can take snapshots of web pages using
   [monolith](https://github.com/Y2Z/monolith).
 - Pulls embedded documents from sites that don't serve PDFs directly.
-- Can produce machine-readable JSON output for hacking and scripting.
+- Can produce JSON output for hacking and scripting.
+
+## Usage
+
+```
+A tool for hosting bibliographic references on IPFS.
+
+This command accepts the path of a bibtex/biblatex file, or `-` to read from stdin.
+If --zotero is passed, this accepts a Zotero group ID instead.
+
+Usage:
+  ipfs-bib [options] <bibtex_file>
+
+Flags:
+      --car string      Rather than add the sources to an IPFS node, export them as a CAR archive.
+  -c, --config string   The path of the config file to use. Otherwise, use the default config.
+      --dry-run         Download sources, but don't add them to IPFS or export them as a CAR.
+  -h, --help            help for ipfs-bib
+      --json            Produce machine-readable JSON output.
+  -o, --output string   Generate a new bibtex file at this path with the IPFS URLs added to each entry.
+      --pin             Pin the source files when adding them to the IPFS node.
+  -v, --verbose         Print verbose output.
+      --version         version for ipfs-bib
+      --zotero          Pull references from a public Zotero library. Pass a Zotero group ID.
+```
