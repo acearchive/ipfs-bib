@@ -17,9 +17,25 @@ to a [CAR archive](ipns://ipld.io/specs/transport/car/).
   educational institution or any service that provides open access to research.
 - Can access local full-text articles downloaded by your reference manager.
 - Can take snapshots of web pages using
-  [monolith](https://github.com/Y2Z/monolith).
+  [monolith](https://github.com/Y2Z/monolith) when a PDF isn't available. This
+  requires monolith to be installed separately.
 - Pulls embedded documents from sites that don't serve PDFs directly.
 - Can produce JSON output for hacking and scripting.
+
+## Configuration
+
+The behavior of the program can be configured via a config file. See [the
+default config file](./config/config.toml) for documentation and examples.
+
+The tool will produce a single UnixFS directory in IPFS with a subdirectory for
+each source, and each of those subdirectories will contain the full-text
+article. Both the name of the directory and the name of the file can be
+configured in the config file.
+
+Some fields in the config file accept a [Go `text/template`
+template](https://pkg.go.dev/text/template). In these templates, functions
+provided by the [Sprig](https://github.com/Masterminds/sprig) library are
+available.
 
 ## Usage
 
