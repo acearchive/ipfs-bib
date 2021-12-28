@@ -55,6 +55,7 @@ Flags:
   -h, --help            help for ipfs-bib
       --json            Produce machine-readable JSON output.
   -o, --output string   Generate a new bibtex file at this path with the IPFS URLs added to each entry.
+      --path string     Add the sources to MFS at this path.
       --pin             Pin the source files when adding them to the IPFS node.
   -v, --verbose         Print verbose output.
       --version         version for ipfs-bib

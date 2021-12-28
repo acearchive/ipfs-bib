@@ -2,15 +2,19 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"github.com/frawleyskid/ipfs-bib/archive"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/logging"
+	"github.com/frawleyskid/ipfs-bib/store"
 	"github.com/nickng/bibtex"
 	"io/ioutil"
 	"os"
 
 	"github.com/spf13/cobra"
 )
+
+var ErrMfsAndCar = errors.New("can not add sources to MFS if exporting them as a CAR")
 
 var (
 	configPath    string
@@ -21,13 +25,21 @@ var (
 	useZotero     bool
 	verboseOutput bool
 	dryRun        bool
+	mfsPath       string
 
 	rootCmd = &cobra.Command{
-		Use:                   "ipfs-bib [options] <bibtex_file>",
-		Short:                 "A tool for hosting bibliographic references on IPFS",
-		Long:                  "A tool for hosting bibliographic references on IPFS.\n\nThis command accepts the path of a bibtex/biblatex file, or `-` to read from stdin.\nIf --zotero is passed, this accepts a Zotero group ID instead.",
-		Args:                  cobra.ExactArgs(1),
-		Version:               "0.1.0",
+		Use:     "ipfs-bib [options] <bibtex_file>",
+		Short:   "A tool for hosting bibliographic references on IPFS",
+		Long:    "A tool for hosting bibliographic references on IPFS.\n\nThis command accepts the path of a bibtex/biblatex file, or `-` to read from stdin.\nIf --zotero is passed, this accepts a Zotero group ID instead.",
+		Args:    cobra.ExactArgs(1),
+		Version: "0.1.0",
+		PreRunE: func(cmd *cobra.Command, args []string) error {
+			if carPath != "" && mfsPath != "" {
+				return ErrMfsAndCar
+			}
+
+			return nil
+		},
 		DisableFlagsInUseLine: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := context.Background()
@@ -97,6 +109,12 @@ var (
 				}
 			}
 
+			if mfsPath != "" {
+				if err := store.AddToMfs(ctx, cfg.Ipfs.Api, location.Root, mfsPath); err != nil {
+					return err
+				}
+			}
+
 			if outputPath != "" {
 				if cfg.Ipfs.UseGateway {
 					if err := archive.UpdateBib(bib, &cfg.Ipfs.Gateway, location); err != nil {
@@ -145,4 +163,5 @@ func init() {
 	rootCmd.Flags().BoolVar(&useZotero, "zotero", false, "Pull references from a public Zotero library. Pass a Zotero group ID.")
 	rootCmd.Flags().BoolVarP(&verboseOutput, "verbose", "v", false, "Print verbose output.")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Download sources, but don't add them to IPFS or export them as a CAR.")
+	rootCmd.Flags().StringVar(&mfsPath, "path", "", "Add the sources to MFS at this path.")
 }
