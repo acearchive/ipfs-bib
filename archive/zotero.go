@@ -282,7 +282,7 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 	}, nil
 }
 
-func FromZotero(ctx context.Context, cfg config.Config, groupId string) ([]BibContents, error) {
+func FromZotero(ctx context.Context, cfg config.Config, groupId string, c chan DownloadResult) {
 	httpClient := network.NewClient(cfg.Archive.UserAgent)
 
 	zoteroClient := NewZoteroClient(httpClient)
@@ -293,18 +293,20 @@ func FromZotero(ctx context.Context, cfg config.Config, groupId string) ([]BibCo
 
 	sourceResolver, err := resolver.FromConfig(cfg)
 	if err != nil {
-		return nil, err
+		c <- DownloadResult{Error: err}
+		close(c)
+		return
 	}
 
 	citations, err := zoteroClient.DownloadCitations(ctx, groupId)
 	if err != nil {
-		return nil, err
+		c <- DownloadResult{Error: err}
+		close(c)
+		return
 	}
 
-	bibContentsList := make([]BibContents, len(citations))
-
 citeMap:
-	for citationIndex, citation := range citations {
+	for _, citation := range citations {
 		bibContent := BibContents{Entry: citation.Entry}
 
 		var sourceLocator *config.SourceLocator
@@ -313,7 +315,9 @@ citeMap:
 		case errors.Is(err, config.ErrCouldNotLocateEntry):
 			logging.Verbose.Println(err)
 		case err != nil:
-			return nil, err
+			c <- DownloadResult{Error: err}
+			close(c)
+			return
 		default:
 			sourceLocator = &locator
 			bibContent.Doi = locator.Doi
@@ -324,7 +328,7 @@ citeMap:
 				contents, err := zoteroClient.DownloadAttachment(ctx, groupId, attachment)
 				if err == nil {
 					bibContent.Contents = &contents
-					bibContentsList[citationIndex] = bibContent
+					c <- DownloadResult{Contents: bibContent}
 					continue citeMap
 				} else if !errors.Is(err, ErrNoSource) {
 					logging.Verbose.Println(err)
@@ -336,7 +340,7 @@ citeMap:
 			contents, err := downloadClient.Download(ctx, *sourceLocator, downloadHandler, sourceResolver)
 			if err == nil {
 				bibContent.Contents = &contents
-				bibContentsList[citationIndex] = bibContent
+				c <- DownloadResult{Contents: bibContent}
 				continue
 			} else if !errors.Is(err, ErrNoSource) {
 				logging.Verbose.Println(err)
@@ -347,17 +351,17 @@ citeMap:
 			contents, err := zoteroClient.DownloadAttachment(ctx, groupId, citation.Attachments[0])
 			if err == nil {
 				bibContent.Contents = &contents
-				bibContentsList[citationIndex] = bibContent
+				c <- DownloadResult{Contents: bibContent}
 				continue
 			} else if !errors.Is(err, ErrNoSource) {
 				logging.Verbose.Println(err)
 			}
 		}
 
-		bibContentsList[citationIndex] = bibContent
+		c <- DownloadResult{Contents: bibContent}
 
 		logging.Error.Println(fmt.Sprintf("Could not find a source for citation: %s", citation.Entry.CiteName))
 	}
 
-	return bibContentsList, nil
+	close(c)
 }

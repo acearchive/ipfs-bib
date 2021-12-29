@@ -65,48 +65,52 @@ var (
 				}
 			}
 
-			var (
-				bib      bibtex.BibTex
-				contents []archive.BibContents
-			)
+			var bib bibtex.BibTex
+
+			contentsChan := archive.NewDownloadResultChan()
 
 			if useZotero {
-				contents, err = archive.FromZotero(ctx, cfg, args[0])
+				go archive.FromZotero(ctx, cfg, args[0], contentsChan)
 				if err != nil {
 					return err
 				}
-
-				bib = archive.ContentsToBibtex(contents)
 			} else {
 				bib, err = archive.ParseBibtex(args[0])
 				if err != nil {
 					return err
 				}
 
-				contents, err = archive.FromBibtex(ctx, cfg, bib)
+				go archive.FromBibtex(ctx, cfg, bib, contentsChan)
 				if err != nil {
 					return err
 				}
 			}
 
-			var location archive.Location
+			var (
+				location archive.Location
+				contents []archive.BibContents
+			)
 
 			switch {
 			case dryRun:
-				location, err = archive.ToNowhere(ctx, cfg, contents)
+				location, contents, err = archive.ToNowhere(ctx, cfg, contentsChan)
 				if err != nil {
 					return err
 				}
 			case carPath == "":
-				location, err = archive.ToNode(ctx, cfg, pinSources, contents)
+				location, contents, err = archive.ToNode(ctx, cfg, pinSources, contentsChan)
 				if err != nil {
 					return err
 				}
 			default:
-				location, err = archive.ToCar(ctx, cfg, carPath, contents)
+				location, contents, err = archive.ToCar(ctx, cfg, carPath, contentsChan)
 				if err != nil {
 					return err
 				}
+			}
+
+			if useZotero {
+				bib = archive.ContentsToBibtex(contents)
 			}
 
 			if mfsPath != "" {

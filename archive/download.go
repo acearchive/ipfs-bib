@@ -85,19 +85,19 @@ func (c DownloadClient) Download(ctx context.Context, locator config.SourceLocat
 	}, nil
 }
 
-func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex) ([]BibContents, error) {
+func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex, c chan DownloadResult) {
 	client := NewDownloadClient(network.NewClient(cfg.Archive.UserAgent))
 
 	downloadHandler := handler.FromConfig(cfg)
 
 	sourceResolver, err := resolver.FromConfig(cfg)
 	if err != nil {
-		return nil, err
+		c <- DownloadResult{Error: err}
+		close(c)
+		return
 	}
 
-	bibContentsList := make([]BibContents, len(bib.Entries))
-
-	for entryIndex, bibEntry := range bib.Entries {
+	for _, bibEntry := range bib.Entries {
 		bibContent := BibContents{Entry: *bibEntry}
 
 		var sourceLocator *config.SourceLocator
@@ -106,7 +106,9 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex) ([]Bi
 		case errors.Is(err, config.ErrCouldNotLocateEntry):
 			logging.Verbose.Println(err)
 		case err != nil:
-			return nil, err
+			c <- DownloadResult{Error: err}
+			close(c)
+			return
 		default:
 			sourceLocator = &locator
 			bibContent.Doi = locator.Doi
@@ -115,7 +117,7 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex) ([]Bi
 		contents, err := ReadLocalBibSource(*bibEntry, true)
 		if err == nil {
 			bibContent.Contents = &contents
-			bibContentsList[entryIndex] = bibContent
+			c <- DownloadResult{Contents: bibContent}
 			continue
 		} else if !errors.Is(err, ErrNoSource) {
 			logging.Verbose.Println(err)
@@ -125,7 +127,7 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex) ([]Bi
 			contents, err = client.Download(ctx, *sourceLocator, downloadHandler, sourceResolver)
 			if err == nil {
 				bibContent.Contents = &contents
-				bibContentsList[entryIndex] = bibContent
+				c <- DownloadResult{Contents: bibContent}
 				continue
 			} else if !errors.Is(err, ErrNoSource) {
 				logging.Verbose.Println(err)
@@ -135,16 +137,16 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex) ([]Bi
 		contents, err = ReadLocalBibSource(*bibEntry, false)
 		if err == nil {
 			bibContent.Contents = &contents
-			bibContentsList[entryIndex] = bibContent
+			c <- DownloadResult{Contents: bibContent}
 			continue
 		} else if !errors.Is(err, ErrNoSource) {
 			logging.Verbose.Println(err)
 		}
 
-		bibContentsList[entryIndex] = bibContent
+		c <- DownloadResult{Contents: bibContent}
 
 		logging.Error.Println(fmt.Sprintf("Could not find a source for citation: %s", bibEntry.CiteName))
 	}
 
-	return bibContentsList, nil
+	close(c)
 }
