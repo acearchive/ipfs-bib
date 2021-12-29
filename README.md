@@ -9,7 +9,9 @@ to a [CAR archive](ipns://ipld.io/specs/transport/car/).
 ## Features
 
 - Pull citations from a bibtex/biblatex file or a public Zotero library.
-- Host content on a local IPFS node or export it to a CAR archive.
+- Host content on a local IPFS node or export it to a CAR archive. You can pin
+  content on your local node or add it to
+  [MFS](https://docs.ipfs.io/concepts/file-systems/).
 - Generate a new biblatex file containing the new URLs of the content on IPFS.
   Both `ipfs://` and gateway URLs are supported.
 - Pulls open-access full-text articles from [Unpaywall](https://unpaywall.org/).
@@ -54,8 +56,8 @@ Flags:
       --dry-run         Download sources, but don't add them to IPFS or export them as a CAR.
   -h, --help            help for ipfs-bib
       --json            Produce machine-readable JSON output.
+      --mfs string      Add the sources to MFS at this path.
   -o, --output string   Generate a new bibtex file at this path with the IPFS URLs added to each entry.
-      --path string     Add the sources to MFS at this path.
       --pin             Pin the source files when adding them to the IPFS node.
   -v, --verbose         Print verbose output.
       --version         version for ipfs-bib

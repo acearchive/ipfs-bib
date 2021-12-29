@@ -163,5 +163,5 @@ func init() {
 	rootCmd.Flags().BoolVar(&useZotero, "zotero", false, "Pull references from a public Zotero library. Pass a Zotero group ID.")
 	rootCmd.Flags().BoolVarP(&verboseOutput, "verbose", "v", false, "Print verbose output.")
 	rootCmd.Flags().BoolVar(&dryRun, "dry-run", false, "Download sources, but don't add them to IPFS or export them as a CAR.")
-	rootCmd.Flags().StringVar(&mfsPath, "path", "", "Add the sources to MFS at this path.")
+	rootCmd.Flags().StringVar(&mfsPath, "mfs", "", "Add the sources to MFS at this path.")
 }
