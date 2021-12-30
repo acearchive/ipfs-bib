@@ -16,11 +16,19 @@ import (
 
 var ErrNoSource = errors.New("source not found")
 
-type DownloadedContent struct {
-	Content   []byte
+type ContentMetadata struct {
 	MediaType string
 	FileName  string
 	Origin    resolver.ContentOrigin
+}
+
+type DownloadedContent struct {
+	ContentMetadata
+	Content []byte
+}
+
+func (c DownloadedContent) ToMetadata() ContentMetadata {
+	return c.ContentMetadata
 }
 
 type DownloadClient struct {
@@ -78,10 +86,12 @@ func (c DownloadClient) Download(ctx context.Context, locator config.SourceLocat
 	}
 
 	return DownloadedContent{
-		Content:   sourceContent.Content,
-		MediaType: sourceContent.MediaType,
-		FileName:  sourceContent.FileName,
-		Origin:    resolvedLocator.Origin,
+		ContentMetadata: ContentMetadata{
+			MediaType: sourceContent.MediaType,
+			FileName:  sourceContent.FileName,
+			Origin:    resolvedLocator.Origin,
+		},
+		Content: sourceContent.Content,
 	}, nil
 }
 

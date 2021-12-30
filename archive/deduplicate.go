@@ -1,85 +1,66 @@
 package archive
 
-import "sort"
+type bibMetadataPredicate = func(BibMetadata) bool
 
-type sortAffinity string
+func bibMetadataHasContent(content BibMetadata) bool {
+	return content.Contents != nil
+}
 
-const (
-	sortAffinityGood          sortAffinity = "good"
-	sortAffinityBad           sortAffinity = "bad"
-	sortAffinityIndeterminate sortAffinity = "indeterminate"
-)
+func bibMetadataHasPreferredMediaType(content BibMetadata) bool {
+	return content.Contents != nil && IsPreferredMediaType(content.Contents.MediaType)
+}
 
-func sortBibContents(contents []BibContents, affinity func(content BibContents) sortAffinity) {
-	sort.SliceStable(contents, func(i, j int) bool {
-		if affinity(contents[i]) == sortAffinityGood && affinity(contents[j]) == sortAffinityBad {
+func bibMetadataHasDoi(content BibMetadata) bool {
+	return content.Doi != nil
+}
+
+func bibMetadataHasFileName(content BibMetadata) bool {
+	return content.Contents != nil && content.Contents.FileName != ""
+}
+
+func (c BibMetadata) isBetterThanBy(other BibMetadata, predicates []bibMetadataPredicate) bool {
+	for _, predicate := range predicates {
+		if predicate(c) && !predicate(other) {
 			return true
-		} else {
-			return false
 		}
-	})
+	}
+
+	return false
 }
 
-func chooseBestBibContents(contents []BibContents) BibContents {
-	if len(contents) == 1 {
-		return contents[0]
+func (c BibMetadata) isBetterThan(other BibMetadata) bool {
+	predicates := []bibMetadataPredicate{
+		bibMetadataHasContent,
+		bibMetadataHasPreferredMediaType,
+		bibMetadataHasDoi,
+		bibMetadataHasFileName,
 	}
 
-	// The least important criteria go first and the most important criteria go last.
-
-	sortBibContents(contents, func(bibContent BibContents) sortAffinity {
-		switch {
-		case bibContent.Contents == nil:
-			return sortAffinityIndeterminate
-		case bibContent.Contents.FileName == "":
-			return sortAffinityBad
-		default:
-			return sortAffinityGood
-		}
-	})
-
-	sortBibContents(contents, func(bibContent BibContents) sortAffinity {
-		if bibContent.Doi == nil {
-			return sortAffinityBad
-		} else {
-			return sortAffinityGood
-		}
-	})
-
-	sortBibContents(contents, func(bibContent BibContents) sortAffinity {
-		switch {
-		case bibContent.Contents == nil:
-			return sortAffinityIndeterminate
-		case IsPreferredMediaType(bibContent.Contents.MediaType):
-			return sortAffinityGood
-		default:
-			return sortAffinityBad
-		}
-	})
-
-	sortBibContents(contents, func(bibContent BibContents) sortAffinity {
-		if bibContent.Contents == nil {
-			return sortAffinityBad
-		} else {
-			return sortAffinityGood
-		}
-	})
-
-	return contents[0]
+	return c.isBetterThanBy(other, predicates)
 }
 
-func DeduplicateContents(contents []BibContents) []BibContents {
-	byCiteName := make(map[BibCiteName][]BibContents)
+func DeduplicateContents(results chan DownloadResult) chan DownloadResult {
+	deduplicated := make(chan DownloadResult, cap(results))
+	bestByCiteName := make(map[BibCiteName]BibMetadata)
 
-	for _, bibContent := range contents {
-		byCiteName[bibContent.Entry.CiteName] = append(byCiteName[bibContent.Entry.CiteName], bibContent)
-	}
+	go func() {
+		for downloadResult := range results {
+			if downloadResult.Error != nil {
+				deduplicated <- downloadResult
+				break
+			}
 
-	deduplicated := make([]BibContents, 0, len(byCiteName))
+			bibContents := downloadResult.Contents
 
-	for _, contentsList := range byCiteName {
-		deduplicated = append(deduplicated, chooseBestBibContents(contentsList))
-	}
+			currentBest, currentBestExists := bestByCiteName[bibContents.Entry.CiteName]
+			if !currentBestExists || bibContents.ToMetadata().isBetterThan(currentBest) {
+				bestByCiteName[bibContents.Entry.CiteName] = bibContents.ToMetadata()
+				deduplicated <- downloadResult
+			}
+		}
+
+		close(deduplicated)
+	}()
 
 	return deduplicated
 }

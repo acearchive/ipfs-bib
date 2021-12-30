@@ -88,29 +88,29 @@ var (
 
 			var (
 				location archive.Location
-				contents []archive.BibContents
+				metadata []archive.BibMetadata
 			)
 
 			switch {
 			case dryRun:
-				location, contents, err = archive.ToNowhere(ctx, cfg, contentsChan)
+				location, metadata, err = archive.ToNowhere(ctx, cfg, contentsChan)
 				if err != nil {
 					return err
 				}
 			case carPath == "":
-				location, contents, err = archive.ToNode(ctx, cfg, pinSources, contentsChan)
+				location, metadata, err = archive.ToNode(ctx, cfg, pinSources, contentsChan)
 				if err != nil {
 					return err
 				}
 			default:
-				location, contents, err = archive.ToCar(ctx, cfg, carPath, contentsChan)
+				location, metadata, err = archive.ToCar(ctx, cfg, carPath, contentsChan)
 				if err != nil {
 					return err
 				}
 			}
 
 			if useZotero {
-				bib = archive.ContentsToBibtex(contents)
+				bib = archive.MetadataToBibtex(metadata)
 			}
 
 			if mfsPath != "" {
@@ -135,7 +135,7 @@ var (
 				}
 			}
 
-			output, err := archive.NewOutput(cfg, contents, location)
+			output, err := archive.NewOutput(cfg, metadata, location)
 			if err != nil {
 				return err
 			}

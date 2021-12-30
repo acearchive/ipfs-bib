@@ -37,22 +37,22 @@ type Output struct {
 	NotArchived   []NotArchivedOutput `json:"notArchived"`
 }
 
-func NewOutput(cfg config.Config, contents []BibContents, location Location) (Output, error) {
+func NewOutput(cfg config.Config, metadata []BibMetadata, location Location) (Output, error) {
 	var (
 		archivedEntries    []ArchivedOutput
 		notArchivedEntries []NotArchivedOutput
 	)
 
-	for _, bibContent := range contents {
-		bibLocation, hasLocation := location.Entries[bibContent.Entry.CiteName]
+	for _, bibMetadata := range metadata {
+		bibLocation, hasLocation := location.Entries[bibMetadata.Entry.CiteName]
 
 		entryDoi := ""
 
-		if bibContent.Doi != nil {
-			entryDoi = *bibContent.Doi
+		if bibMetadata.Doi != nil {
+			entryDoi = *bibMetadata.Doi
 		}
 
-		if hasLocation && bibContent.Contents != nil {
+		if hasLocation && bibMetadata.Contents != nil {
 			gatewayUrl, err := bibLocation.GatewayUrl(cfg.Ipfs.Gateway)
 			if err != nil {
 				return Output{}, err
@@ -61,20 +61,20 @@ func NewOutput(cfg config.Config, contents []BibContents, location Location) (Ou
 			ipfsUrl := bibLocation.IpfsUrl()
 
 			archivedEntries = append(archivedEntries, ArchivedOutput{
-				CiteName:      bibContent.Entry.CiteName,
+				CiteName:      bibMetadata.Entry.CiteName,
 				Doi:           entryDoi,
-				MediaType:     bibContent.Contents.MediaType,
+				MediaType:     bibMetadata.Contents.MediaType,
 				FileCid:       bibLocation.FileCid.String(),
 				FileName:      bibLocation.FileName,
 				DirectoryCid:  bibLocation.DirectoryCid.String(),
 				DirectoryName: bibLocation.DirectoryName,
 				IpfsUrl:       ipfsUrl.String(),
 				GatewayUrl:    gatewayUrl.String(),
-				ContentOrigin: string(bibContent.Contents.Origin),
+				ContentOrigin: string(bibMetadata.Contents.Origin),
 			})
 		} else {
 			notArchivedEntries = append(notArchivedEntries, NotArchivedOutput{
-				CiteName: bibContent.Entry.CiteName,
+				CiteName: bibMetadata.Entry.CiteName,
 				Doi:      entryDoi,
 			})
 		}
@@ -82,7 +82,7 @@ func NewOutput(cfg config.Config, contents []BibContents, location Location) (Ou
 
 	return Output{
 		Cid:           location.Root.String(),
-		TotalEntries:  len(contents),
+		TotalEntries:  len(metadata),
 		TotalArchived: len(archivedEntries),
 		Archived:      archivedEntries,
 		NotArchived:   notArchivedEntries,
