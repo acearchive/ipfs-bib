@@ -1,10 +1,27 @@
 package config
 
+import (
+	"errors"
+)
+
+var ErrInvalidCarVersion = errors.New("CAR version must be \"1\" or \"2\"")
+
 type Ipfs struct {
 	Api        string `mapstructure:"api"`
 	UseGateway bool   `mapstructure:"use-gateway"`
 	Gateway    string `mapstructure:"gateway"`
 	CarVersion string `mapstructure:"car-version"`
+}
+
+func (c Ipfs) IsCarV2() (bool, error) {
+	switch c.CarVersion {
+	case "1":
+		return false, nil
+	case "2":
+		return true, nil
+	default:
+		return false, ErrInvalidCarVersion
+	}
 }
 
 type Archive struct {

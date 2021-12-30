@@ -95,15 +95,15 @@ func (c DownloadClient) Download(ctx context.Context, locator config.SourceLocat
 	}, nil
 }
 
-func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex, c chan DownloadResult) {
+func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex, downloadResults chan DownloadResult) {
 	client := NewDownloadClient(network.NewClient(cfg.Archive.UserAgent))
 
 	downloadHandler := handler.FromConfig(cfg)
 
 	sourceResolver, err := resolver.FromConfig(cfg)
 	if err != nil {
-		c <- DownloadResult{Error: err}
-		close(c)
+		downloadResults <- DownloadResult{Error: err}
+		close(downloadResults)
 		return
 	}
 
@@ -116,8 +116,8 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex, c cha
 		case errors.Is(err, config.ErrCouldNotLocateEntry):
 			logging.Verbose.Println(err)
 		case err != nil:
-			c <- DownloadResult{Error: err}
-			close(c)
+			downloadResults <- DownloadResult{Error: err}
+			close(downloadResults)
 			return
 		default:
 			sourceLocator = &locator
@@ -127,7 +127,7 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex, c cha
 		contents, err := ReadLocalBibSource(*bibEntry, true)
 		if err == nil {
 			bibContent.Contents = &contents
-			c <- DownloadResult{Contents: bibContent}
+			downloadResults <- DownloadResult{Contents: bibContent}
 			continue
 		} else if !errors.Is(err, ErrNoSource) {
 			logging.Verbose.Println(err)
@@ -137,7 +137,7 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex, c cha
 			contents, err = client.Download(ctx, *sourceLocator, downloadHandler, sourceResolver)
 			if err == nil {
 				bibContent.Contents = &contents
-				c <- DownloadResult{Contents: bibContent}
+				downloadResults <- DownloadResult{Contents: bibContent}
 				continue
 			} else if !errors.Is(err, ErrNoSource) {
 				logging.Verbose.Println(err)
@@ -147,16 +147,16 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex, c cha
 		contents, err = ReadLocalBibSource(*bibEntry, false)
 		if err == nil {
 			bibContent.Contents = &contents
-			c <- DownloadResult{Contents: bibContent}
+			downloadResults <- DownloadResult{Contents: bibContent}
 			continue
 		} else if !errors.Is(err, ErrNoSource) {
 			logging.Verbose.Println(err)
 		}
 
-		c <- DownloadResult{Contents: bibContent}
+		downloadResults <- DownloadResult{Contents: bibContent}
 
 		logging.Error.Println(fmt.Sprintf("Could not find a source for citation: %s", bibEntry.CiteName))
 	}
 
-	close(c)
+	close(downloadResults)
 }

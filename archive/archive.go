@@ -62,7 +62,7 @@ type Location struct {
 	Entries map[BibCiteName]config.BibEntryLocation
 }
 
-func storeContents(ctx context.Context, cfg config.Config, contents chan DownloadResult, sourceStore *store.SourceStore) (Location, []BibMetadata, error) {
+func Store(ctx context.Context, cfg config.Config, contents chan DownloadResult, sourceStore store.SourceStore) (Location, []BibMetadata, error) {
 	// We may have multiple contents with the same bibtex cite name, so we need
 	// to deduplicate them by choosing the "best" contents for a given cite name.
 	deduplicatedContents := DeduplicateContents(contents)
@@ -74,7 +74,7 @@ func storeContents(ctx context.Context, cfg config.Config, contents chan Downloa
 
 	locationMap := make(map[BibCiteName]config.BibEntryLocation)
 
-	var metadataList []BibMetadata
+	var metadataList []BibMetadata //nolint:prealloc
 
 	for downloadResult := range deduplicatedContents {
 		if downloadResult.Error != nil {
@@ -91,7 +91,7 @@ func storeContents(ctx context.Context, cfg config.Config, contents chan Downloa
 
 		sourcePath := sourcePathTemplate.Execute(bibContent.Entry, bibContent.Contents.FileName, bibContent.Contents.MediaType)
 
-		bibSource := &config.BibSource{
+		bibSource := config.BibSource{
 			Content:       bibContent.Contents.Content,
 			FileName:      sourcePath.FileName,
 			DirectoryName: sourcePath.DirectoryName,
@@ -102,10 +102,10 @@ func storeContents(ctx context.Context, cfg config.Config, contents chan Downloa
 			return Location{}, nil, err
 		}
 
-		locationMap[bibContent.Entry.CiteName] = *entryLocation
+		locationMap[bibContent.Entry.CiteName] = entryLocation
 	}
 
-	rootCid, err := sourceStore.Write(ctx)
+	rootCid, err := sourceStore.Finalize(ctx)
 	if err != nil {
 		return Location{}, nil, err
 	}
@@ -114,65 +114,4 @@ func storeContents(ctx context.Context, cfg config.Config, contents chan Downloa
 		Root:    rootCid,
 		Entries: locationMap,
 	}, metadataList, nil
-}
-
-func ToCar(ctx context.Context, cfg config.Config, carPath string, contents chan DownloadResult) (Location, []BibMetadata, error) {
-	dagService := store.CarService()
-
-	sourceStore, err := store.NewSourceStore(ctx, dagService)
-	if err != nil {
-		return Location{}, nil, err
-	}
-
-	location, metadata, err := storeContents(ctx, cfg, contents, sourceStore)
-	if err != nil {
-		return Location{}, nil, err
-	}
-
-	if err := store.WriteCar(ctx, dagService, location.Root, carPath, cfg.Ipfs.CarVersion == "2"); err != nil {
-		return Location{}, nil, err
-	}
-
-	return location, metadata, nil
-}
-
-func ToNode(ctx context.Context, cfg config.Config, pin bool, contents chan DownloadResult) (Location, []BibMetadata, error) {
-	ipfsApi, err := store.IpfsClient(cfg.Ipfs.Api)
-	if err != nil {
-		return Location{}, nil, err
-	}
-
-	sourceStore, err := store.NewSourceStore(ctx, ipfsApi.Dag())
-	if err != nil {
-		return Location{}, nil, err
-	}
-
-	location, metadata, err := storeContents(ctx, cfg, contents, sourceStore)
-	if err != nil {
-		return Location{}, nil, err
-	}
-
-	if pin {
-		if err := store.Pin(ctx, ipfsApi, location.Root, true); err != nil {
-			return Location{}, nil, err
-		}
-	}
-
-	return location, metadata, nil
-}
-
-func ToNowhere(ctx context.Context, cfg config.Config, contents chan DownloadResult) (Location, []BibMetadata, error) {
-	dagService := store.CarService()
-
-	sourceStore, err := store.NewSourceStore(ctx, dagService)
-	if err != nil {
-		return Location{}, nil, err
-	}
-
-	location, metadata, err := storeContents(ctx, cfg, contents, sourceStore)
-	if err != nil {
-		return Location{}, nil, err
-	}
-
-	return location, metadata, nil
 }

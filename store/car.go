@@ -5,17 +5,12 @@ import (
 	"errors"
 	"fmt"
 	blocks "github.com/ipfs/go-block-format"
-	"github.com/ipfs/go-blockservice"
 	"github.com/ipfs/go-cid"
-	"github.com/ipfs/go-datastore"
-	syncds "github.com/ipfs/go-datastore/sync"
-	blockstore "github.com/ipfs/go-ipfs-blockstore"
-	offline "github.com/ipfs/go-ipfs-exchange-offline"
 	ipld "github.com/ipfs/go-ipld-format"
-	dag "github.com/ipfs/go-merkledag"
 	gocar "github.com/ipld/go-car"
 	gocarv2 "github.com/ipld/go-car/v2"
 	selectorparse "github.com/ipld/go-ipld-prime/traversal/selector/parse"
+	"github.com/frawleyskid/ipfs-bib/config"
 	"io/ioutil"
 	"os"
 )
@@ -32,13 +27,7 @@ func (ds dagStore) Get(ctx context.Context, c cid.Cid) (blocks.Block, error) {
 	return ds.service.Get(ctx, c)
 }
 
-func CarService() ipld.DAGService {
-	store := blockstore.NewBlockstore(syncds.MutexWrap(datastore.NewMapDatastore()))
-	blockService := blockservice.New(store, offline.Exchange(store))
-	return dag.NewDAGService(blockService)
-}
-
-func WriteCar(ctx context.Context, service ipld.DAGService, root cid.Cid, path string, carv2 bool) error {
+func writeCar(ctx context.Context, service ipld.DAGService, root cid.Cid, path string, carv2 bool) error {
 	if _, err := os.Stat(path); !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("%w: %s", ErrCarAlreadyExists, path)
 	}
@@ -75,4 +64,51 @@ func WriteCar(ctx context.Context, service ipld.DAGService, root cid.Cid, path s
 	}
 
 	return nil
+}
+
+type CarSourceStore struct {
+	service *LocalService
+	store   *dagSourceStore
+	carPath string
+	carv2   bool
+}
+
+func NewCarSourceStore(ctx context.Context, carPath string, carv2 bool) (*CarSourceStore, error) {
+	service, err := NewLocalService()
+	if err != nil {
+		return nil, err
+	}
+
+	store, err := newDagSourceStore(ctx, service)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CarSourceStore{
+		service: service,
+		store:   store,
+		carPath: carPath,
+		carv2:   carv2,
+	}, nil
+}
+
+func (s *CarSourceStore) AddSource(ctx context.Context, source config.BibSource) (config.BibEntryLocation, error) {
+	return s.store.AddSource(ctx, source)
+}
+
+func (s *CarSourceStore) Finalize(ctx context.Context) (cid.Cid, error) {
+	rootCid, err := s.store.Finalize(ctx)
+	if err != nil {
+		return cid.Undef, err
+	}
+
+	if err := writeCar(ctx, s.service, rootCid, s.carPath, s.carv2); err != nil {
+		return cid.Undef, err
+	}
+
+	if err := s.service.Close(); err != nil {
+		return cid.Undef, err
+	}
+
+	return rootCid, nil
 }

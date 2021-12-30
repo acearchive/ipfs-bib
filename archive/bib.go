@@ -100,10 +100,12 @@ func ReadLocalBibSource(entry bibtex.BibEntry, preferredOnly bool) (DownloadedCo
 		}
 
 		return DownloadedContent{
-			Content:   fileContent,
-			MediaType: bibMediaType,
-			FileName:  bibFileName,
-			Origin:    ContentOriginLocal,
+			Content: fileContent,
+			ContentMetadata: ContentMetadata{
+				MediaType: bibMediaType,
+				FileName:  bibFileName,
+				Origin:    ContentOriginLocal,
+			},
 		}, nil
 	}
 

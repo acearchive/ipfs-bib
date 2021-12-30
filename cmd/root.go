@@ -86,37 +86,43 @@ var (
 				}
 			}
 
-			var (
-				location archive.Location
-				metadata []archive.BibMetadata
-			)
+			var sourceStore store.SourceStore
 
 			switch {
 			case dryRun:
-				location, metadata, err = archive.ToNowhere(ctx, cfg, contentsChan)
+				sourceStore, err = store.NewNullSourceStore(ctx)
 				if err != nil {
 					return err
 				}
 			case carPath == "":
-				location, metadata, err = archive.ToNode(ctx, cfg, pinSources, contentsChan)
+				if mfsPath == "" {
+					sourceStore, err = store.NewNodeSourceStore(ctx, cfg.Ipfs.Api, pinSources, nil)
+				} else {
+					sourceStore, err = store.NewNodeSourceStore(ctx, cfg.Ipfs.Api, pinSources, &mfsPath)
+				}
+
 				if err != nil {
 					return err
 				}
 			default:
-				location, metadata, err = archive.ToCar(ctx, cfg, carPath, contentsChan)
+				isCarV2, err := cfg.Ipfs.IsCarV2()
+				if err != nil {
+					return err
+				}
+
+				sourceStore, err = store.NewCarSourceStore(ctx, carPath, isCarV2)
 				if err != nil {
 					return err
 				}
 			}
 
-			if useZotero {
-				bib = archive.MetadataToBibtex(metadata)
+			location, metadata, err := archive.Store(ctx, cfg, contentsChan, sourceStore)
+			if err != nil {
+				return err
 			}
 
-			if mfsPath != "" {
-				if err := store.AddToMfs(ctx, cfg.Ipfs.Api, location.Root, mfsPath); err != nil {
-					return err
-				}
+			if useZotero {
+				bib = archive.MetadataToBibtex(metadata)
 			}
 
 			if outputPath != "" {
