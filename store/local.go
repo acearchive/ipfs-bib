@@ -2,6 +2,8 @@ package store
 
 import (
 	"github.com/ipfs/go-blockservice"
+	"github.com/ipfs/go-datastore"
+	"github.com/ipfs/go-datastore/mount"
 	syncds "github.com/ipfs/go-datastore/sync"
 	flatfs "github.com/ipfs/go-ds-flatfs"
 	blockstore "github.com/ipfs/go-ipfs-blockstore"
@@ -28,19 +30,24 @@ func NewLocalService() (*LocalService, error) {
 		return nil, err
 	}
 
-	datastore, err := flatfs.Open(storePath, false)
+	fsStore, err := flatfs.Open(storePath, false)
 	if err != nil {
 		return nil, err
 	}
 
-	store := blockstore.NewBlockstore(syncds.MutexWrap(datastore))
-	blockService := blockservice.New(store, offline.Exchange(store))
+	mountStore := mount.New([]mount.Mount{{
+		Prefix:    datastore.NewKey("/blocks"),
+		Datastore: fsStore,
+	}})
+
+	blockStore := blockstore.NewBlockstore(syncds.MutexWrap(mountStore))
+	blockService := blockservice.New(blockStore, offline.Exchange(blockStore))
 
 	service := dag.NewDAGService(blockService)
 
 	return &LocalService{
 		DAGService: service,
-		ds:         datastore,
+		ds:         fsStore,
 		path:       storePath,
 	}, nil
 }
