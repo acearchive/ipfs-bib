@@ -13,7 +13,7 @@ to a [CAR archive](ipns://ipld.io/specs/transport/car/).
   content on your local node or add it to
   [MFS](https://docs.ipfs.io/concepts/file-systems/).
 - Pin content with IPFS [pinning
-  services](ipns://docs.ipfs.io/how-to/work-with-pinning-services/).
+  services](https://docs.ipfs.io/how-to/work-with-pinning-services/).
 - Generate a new biblatex file containing the new URLs of the content on IPFS.
   Both `ipfs://` and gateway URLs are supported.
 - Pulls open-access full-text articles from [Unpaywall](https://unpaywall.org/).
