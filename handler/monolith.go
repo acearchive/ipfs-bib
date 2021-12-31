@@ -17,42 +17,42 @@ type MonolithHandler struct {
 }
 
 func NewMonolithHandler(cfg config.Config) DownloadHandler {
-	if !cfg.Snapshot.Enabled {
+	if !cfg.File.Snapshot.Enabled {
 		return &NoOpHandler{}
 	}
 
-	args := []string{"--user-agent", cfg.Archive.UserAgent}
+	args := []string{"--user-agent", cfg.File.Archive.UserAgent}
 
 	switch {
-	case cfg.Snapshot.AllowInsecure:
+	case cfg.File.Snapshot.AllowInsecure:
 		args = append(args, "--insecure")
 		fallthrough
-	case !cfg.Snapshot.IncludeAudio:
+	case !cfg.File.Snapshot.IncludeAudio:
 		args = append(args, "--no-audio")
 		fallthrough
-	case !cfg.Snapshot.IncludeCss:
+	case !cfg.File.Snapshot.IncludeCss:
 		args = append(args, "--no-css")
 		fallthrough
-	case !cfg.Snapshot.IncludeFonts:
+	case !cfg.File.Snapshot.IncludeFonts:
 		args = append(args, "--no-fonts")
 		fallthrough
-	case !cfg.Snapshot.IncludeFrames:
+	case !cfg.File.Snapshot.IncludeFrames:
 		args = append(args, "--no-frames")
 		fallthrough
-	case !cfg.Snapshot.IncludeImages:
+	case !cfg.File.Snapshot.IncludeImages:
 		args = append(args, "--no-images")
 		fallthrough
-	case !cfg.Snapshot.IncludeJs:
+	case !cfg.File.Snapshot.IncludeJs:
 		args = append(args, "--no-js")
 		fallthrough
-	case !cfg.Snapshot.IncludeVideo:
+	case !cfg.File.Snapshot.IncludeVideo:
 		args = append(args, "--no-video")
 		fallthrough
-	case !cfg.Snapshot.IncludeMetadata:
+	case !cfg.File.Snapshot.IncludeMetadata:
 		args = append(args, "--no-metadata")
 	}
 
-	return &MonolithHandler{path: cfg.Snapshot.Path, args: args}
+	return &MonolithHandler{path: cfg.File.Snapshot.Path, args: args}
 }
 
 func (s *MonolithHandler) Handle(_ context.Context, response DownloadResponse) (SourceContent, error) {

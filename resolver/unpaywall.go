@@ -28,11 +28,11 @@ type UnpaywallResolver struct {
 }
 
 func NewUnpaywallResolver(httpClient *network.HttpClient, cfg config.Config) SourceResolver {
-	if !cfg.Unpaywall.Enabled || cfg.Unpaywall.Email == "" {
+	if !cfg.File.Unpaywall.Enabled || cfg.File.Unpaywall.Email == "" {
 		return &NoOpResolver{}
 	}
 
-	return &UnpaywallResolver{httpClient, cfg.Unpaywall.Email}
+	return &UnpaywallResolver{httpClient, cfg.File.Unpaywall.Email}
 }
 
 func (u *UnpaywallResolver) Resolve(ctx context.Context, locator config.SourceLocator) (ResolvedLocator, error) {

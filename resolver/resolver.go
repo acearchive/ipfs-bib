@@ -37,13 +37,13 @@ func (NoOpResolver) Resolve(_ context.Context, _ config.SourceLocator) (Resolved
 }
 
 func FromConfig(cfg config.Config) (SourceResolver, error) {
-	userResolver, err := NewUserResolver(network.NewClient(cfg.Archive.UserAgent), cfg.Resolvers)
+	userResolver, err := NewUserResolver(network.NewClient(cfg.File.Archive.UserAgent), cfg.File.Resolvers)
 	if err != nil {
 		return nil, err
 	}
 
 	return MultiResolver{
-		NewUnpaywallResolver(network.NewClient(cfg.Archive.UserAgent), cfg),
+		NewUnpaywallResolver(network.NewClient(cfg.File.Archive.UserAgent), cfg),
 		userResolver,
 		DirectResolver{},
 	}, nil

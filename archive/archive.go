@@ -8,7 +8,10 @@ import (
 	"github.com/nickng/bibtex"
 )
 
-const downloadResultChanSize = 16
+const (
+	downloadResultChanSize = 16
+	oneshotChanSize        = 1
+)
 
 type BibCiteName = string
 
@@ -43,18 +46,42 @@ type DownloadResult struct {
 	Error    error
 }
 
-func MetadataToBibtex(metadata []BibMetadata) bibtex.BibTex {
-	bib := bibtex.NewBibTex()
-
-	for i := range metadata {
-		bib.Entries = append(bib.Entries, &metadata[i].Entry)
-	}
-
-	return *bib
+type BibtexResult struct {
+	Bib   bibtex.BibTex
+	Error error
 }
 
-func NewDownloadResultChan() chan DownloadResult {
+func newDownloadResultChan() chan DownloadResult {
 	return make(chan DownloadResult, downloadResultChanSize)
+}
+
+func newBibtexResultChan() chan BibtexResult {
+	return make(chan BibtexResult, oneshotChanSize)
+}
+
+func Load(ctx context.Context, cfg config.Config, input string) (chan BibtexResult, chan DownloadResult) {
+	bibResult := newBibtexResultChan()
+	downloadResult := newDownloadResultChan()
+
+	go func() {
+		if cfg.Flags.UseZotero {
+			FromZotero(ctx, cfg, input, bibResult, downloadResult)
+		} else {
+			bib, err := ParseBibtex(input)
+			if err == nil {
+				bibResult <- BibtexResult{Bib: bib}
+				close(bibResult)
+			} else {
+				bibResult <- BibtexResult{Error: err}
+				downloadResult <- DownloadResult{Error: err}
+				return
+			}
+
+			FromBibtex(ctx, cfg, bib, downloadResult)
+		}
+	}()
+
+	return bibResult, downloadResult
 }
 
 type Location struct {

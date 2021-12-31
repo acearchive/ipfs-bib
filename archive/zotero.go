@@ -91,6 +91,16 @@ type ZoteroClient struct {
 	httpClient *network.HttpClient
 }
 
+func ZoteroCitationsToBibtex(citations []ZoteroCitation) bibtex.BibTex {
+	bib := bibtex.NewBibTex()
+
+	for i := range citations {
+		bib.Entries = append(bib.Entries, &citations[i].Entry)
+	}
+
+	return *bib
+}
+
 func NewZoteroClient(httpClient *network.HttpClient) *ZoteroClient {
 	return &ZoteroClient{httpClient}
 }
@@ -284,8 +294,8 @@ func (c *ZoteroClient) DownloadAttachment(ctx context.Context, groupId string, a
 	}, nil
 }
 
-func FromZotero(ctx context.Context, cfg config.Config, groupId string, downloadResults chan DownloadResult) {
-	httpClient := network.NewClient(cfg.Archive.UserAgent)
+func FromZotero(ctx context.Context, cfg config.Config, groupId string, bibResult chan BibtexResult, downloadResults chan DownloadResult) {
+	httpClient := network.NewClient(cfg.File.Archive.UserAgent)
 
 	zoteroClient := NewZoteroClient(httpClient)
 
@@ -306,6 +316,9 @@ func FromZotero(ctx context.Context, cfg config.Config, groupId string, download
 		close(downloadResults)
 		return
 	}
+
+	bib := ZoteroCitationsToBibtex(citations)
+	bibResult <- BibtexResult{Bib: bib}
 
 citeMap:
 	for _, citation := range citations {

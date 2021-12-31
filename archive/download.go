@@ -96,7 +96,7 @@ func (c DownloadClient) Download(ctx context.Context, locator config.SourceLocat
 }
 
 func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex, downloadResults chan DownloadResult) {
-	client := NewDownloadClient(network.NewClient(cfg.Archive.UserAgent))
+	client := NewDownloadClient(network.NewClient(cfg.File.Archive.UserAgent))
 
 	downloadHandler := handler.FromConfig(cfg)
 

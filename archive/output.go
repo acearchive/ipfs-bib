@@ -53,7 +53,7 @@ func NewOutput(cfg config.Config, metadata []BibMetadata, location Location) (Ou
 		}
 
 		if hasLocation && bibMetadata.Contents != nil {
-			gatewayUrl, err := bibLocation.GatewayUrl(cfg.Ipfs.Gateway)
+			gatewayUrl, err := bibLocation.GatewayUrl(cfg.File.Ipfs.Gateway)
 			if err != nil {
 				return Output{}, err
 			}

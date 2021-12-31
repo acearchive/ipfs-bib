@@ -28,12 +28,12 @@ type SourcePathTemplate struct {
 }
 
 func NewSourcePathTemplate(cfg Config) (SourcePathTemplate, error) {
-	filename, err := template.New("archive.file-name").Funcs(sprig.TxtFuncMap()).Parse(cfg.Archive.FileName)
+	filename, err := template.New("archive.file-name").Funcs(sprig.TxtFuncMap()).Parse(cfg.File.Archive.FileName)
 	if err != nil {
 		return SourcePathTemplate{}, fmt.Errorf("%w: %v", ErrInvalidTemplate, err)
 	}
 
-	directory, err := template.New("archive.directory-name").Funcs(sprig.TxtFuncMap()).Parse(cfg.Archive.DirectoryName)
+	directory, err := template.New("archive.directory-name").Funcs(sprig.TxtFuncMap()).Parse(cfg.File.Archive.DirectoryName)
 	if err != nil {
 		return SourcePathTemplate{}, fmt.Errorf("%w: %v", ErrInvalidTemplate, err)
 	}
