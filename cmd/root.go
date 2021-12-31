@@ -14,13 +14,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var ErrMfsAndCar = errors.New("can not add sources to MFS if exporting them as a CAR")
+var (
+	ErrMfsAndCar = errors.New("can not add sources to MFS if exporting them as a CAR")
+	ErrPinAndCar = errors.New("can not pin sources if exporting them as a CAR")
+)
 
 var (
 	configPath    string
 	outputPath    string
 	carPath       string
-	pinSources    bool
+	pinLocal      bool
+	pinRemoteName string
 	jsonOutput    bool
 	useZotero     bool
 	verboseOutput bool
@@ -36,6 +40,10 @@ var (
 		PreRunE: func(cmd *cobra.Command, args []string) error {
 			if carPath != "" && mfsPath != "" {
 				return ErrMfsAndCar
+			}
+
+			if carPath != "" && (pinLocal || pinRemoteName != "") {
+				return ErrPinAndCar
 			}
 
 			return nil
@@ -95,12 +103,27 @@ var (
 					return err
 				}
 			case carPath == "":
-				if mfsPath == "" {
-					sourceStore, err = store.NewNodeSourceStore(ctx, cfg.Ipfs.Api, pinSources, nil)
-				} else {
-					sourceStore, err = store.NewNodeSourceStore(ctx, cfg.Ipfs.Api, pinSources, &mfsPath)
+				var (
+					maybeMfsPath       *string
+					maybePinRemoteName *string
+				)
+
+				if mfsPath != "" {
+					maybeMfsPath = &mfsPath
 				}
 
+				if pinRemoteName != "" {
+					maybePinRemoteName = &pinRemoteName
+				}
+
+				options := store.NodeSourceStoreOptions{
+					PinLocal:        pinLocal,
+					PinRemoteName:   maybePinRemoteName,
+					PinningServices: cfg.Pins,
+					MfsPath:         maybeMfsPath,
+				}
+
+				sourceStore, err = store.NewNodeSourceStore(ctx, cfg.Ipfs.Api, options)
 				if err != nil {
 					return err
 				}
@@ -168,7 +191,8 @@ func init() {
 	rootCmd.Flags().StringVarP(&configPath, "config", "c", "", "The path of the config file to use. Otherwise, use the default config.")
 	rootCmd.Flags().StringVarP(&outputPath, "output", "o", "", "Generate a new bibtex file at this path with the IPFS URLs added to each entry.")
 	rootCmd.Flags().StringVar(&carPath, "car", "", "Rather than add the sources to an IPFS node, export them as a CAR archive.")
-	rootCmd.Flags().BoolVar(&pinSources, "pin", false, "Pin the source files when adding them to the IPFS node.")
+	rootCmd.Flags().BoolVar(&pinLocal, "pin", false, "Pin the source files when adding them to the IPFS node.")
+	rootCmd.Flags().StringVar(&pinRemoteName, "pin-remote", "", "Pin the source files using each of the configured IPFS pinning services. Pass a name for the pin.")
 	rootCmd.Flags().BoolVar(&jsonOutput, "json", false, "Produce machine-readable JSON output.")
 	rootCmd.Flags().BoolVar(&useZotero, "zotero", false, "Pull references from a public Zotero library. Pass a Zotero group ID.")
 	rootCmd.Flags().BoolVarP(&verboseOutput, "verbose", "v", false, "Print verbose output.")

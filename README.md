@@ -12,6 +12,8 @@ to a [CAR archive](ipns://ipld.io/specs/transport/car/).
 - Host content on a local IPFS node or export it to a CAR archive. You can pin
   content on your local node or add it to
   [MFS](https://docs.ipfs.io/concepts/file-systems/).
+- Pin content with IPFS [pinning
+  services](ipns://docs.ipfs.io/how-to/work-with-pinning-services/).
 - Generate a new biblatex file containing the new URLs of the content on IPFS.
   Both `ipfs://` and gateway URLs are supported.
 - Pulls open-access full-text articles from [Unpaywall](https://unpaywall.org/).
@@ -51,15 +53,16 @@ Usage:
   ipfs-bib [options] <bibtex_file>
 
 Flags:
-      --car string      Rather than add the sources to an IPFS node, export them as a CAR archive.
-  -c, --config string   The path of the config file to use. Otherwise, use the default config.
-      --dry-run         Download sources, but don't add them to IPFS or export them as a CAR.
-  -h, --help            help for ipfs-bib
-      --json            Produce machine-readable JSON output.
-      --mfs string      Add the sources to MFS at this path.
-  -o, --output string   Generate a new bibtex file at this path with the IPFS URLs added to each entry.
-      --pin             Pin the source files when adding them to the IPFS node.
-  -v, --verbose         Print verbose output.
-      --version         version for ipfs-bib
-      --zotero          Pull references from a public Zotero library. Pass a Zotero group ID.
+      --car string          Rather than add the sources to an IPFS node, export them as a CAR archive.
+  -c, --config string       The path of the config file to use. Otherwise, use the default config.
+      --dry-run             Download sources, but don't add them to IPFS or export them as a CAR.
+  -h, --help                help for ipfs-bib
+      --json                Produce machine-readable JSON output.
+      --mfs string          Add the sources to MFS at this path.
+  -o, --output string       Generate a new bibtex file at this path with the IPFS URLs added to each entry.
+      --pin                 Pin the source files when adding them to the IPFS node.
+      --pin-remote string   Pin the source files using each of the configured IPFS pinning services. Pass a name for the pin.
+  -v, --verbose             Print verbose output.
+      --version             version for ipfs-bib
+      --zotero              Pull references from a public Zotero library. Pass a Zotero group ID.
 ```

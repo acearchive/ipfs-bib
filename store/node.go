@@ -8,14 +8,23 @@ import (
 )
 
 type NodeSourceStore struct {
-	apiUrl  string
-	ipfsApi *ipfs.HttpApi
-	store   *dagSourceStore
-	pin     bool
-	mfsPath *string
+	apiUrl          string
+	ipfsApi         *ipfs.HttpApi
+	store           *dagSourceStore
+	pinLocal        bool
+	pinRemoteName   *string
+	pinningServices []config.Pin
+	mfsPath         *string
 }
 
-func NewNodeSourceStore(ctx context.Context, apiUrl string, pin bool, mfsPath *string) (*NodeSourceStore, error) {
+type NodeSourceStoreOptions struct {
+	PinLocal        bool
+	PinRemoteName   *string
+	PinningServices []config.Pin
+	MfsPath         *string
+}
+
+func NewNodeSourceStore(ctx context.Context, apiUrl string, options NodeSourceStoreOptions) (*NodeSourceStore, error) {
 	ipfsApi, err := IpfsClient(apiUrl)
 	if err != nil {
 		return nil, err
@@ -29,11 +38,13 @@ func NewNodeSourceStore(ctx context.Context, apiUrl string, pin bool, mfsPath *s
 	}
 
 	return &NodeSourceStore{
-		apiUrl:  apiUrl,
-		ipfsApi: ipfsApi,
-		store:   store,
-		pin:     pin,
-		mfsPath: mfsPath,
+		apiUrl:          apiUrl,
+		ipfsApi:         ipfsApi,
+		store:           store,
+		pinLocal:        options.PinLocal,
+		pinRemoteName:   options.PinRemoteName,
+		pinningServices: options.PinningServices,
+		mfsPath:         options.MfsPath,
 	}, nil
 }
 
@@ -47,8 +58,14 @@ func (s *NodeSourceStore) Finalize(ctx context.Context) (cid.Cid, error) {
 		return cid.Undef, err
 	}
 
-	if s.pin {
-		if err := Pin(ctx, s.ipfsApi, rootCid, true); err != nil {
+	if s.pinLocal {
+		if err := PinLocal(ctx, s.ipfsApi, rootCid, true); err != nil {
+			return cid.Undef, err
+		}
+	}
+
+	if s.pinRemoteName != nil {
+		if err := PinRemote(ctx, rootCid, *s.pinRemoteName, s.pinningServices); err != nil {
 			return cid.Undef, err
 		}
 	}

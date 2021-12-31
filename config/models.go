@@ -51,6 +51,11 @@ type Snapshot struct {
 	IncludeMetadata bool   `mapstructure:"include-metadata"`
 }
 
+type Pin struct {
+	Endpoint string `mapstructure:"endpoint"`
+	Token    string `mapstructure:"token"`
+}
+
 type Resolver struct {
 	Schemes          []string `mapstructure:"schemes"`
 	IncludeHostnames []string `mapstructure:"include-hostnames"`
@@ -62,5 +67,6 @@ type Config struct {
 	Archive   Archive    `mapstructure:"archive"`
 	Unpaywall Unpaywall  `mapstructure:"unpaywall"`
 	Snapshot  Snapshot   `mapstructure:"snapshot"`
+	Pins      []Pin      `mapstructure:"pins"`
 	Resolvers []Resolver `mapstructure:"resolvers"`
 }

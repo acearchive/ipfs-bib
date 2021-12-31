@@ -93,6 +93,14 @@
     # Include timestamp and source information.
     include-metadata = true
 
+# IPFS pinning services to archive sources to.
+#[[pins]]
+    # The API endpoint for the pinning service.
+    #endpoint = "https://api.pinata.cloud/psa"
+
+    # The bearer token for the pinning service.
+    #token = ""
+
 # Resolve sources through a link resolver.
 #[[resolvers]]
     # A list of URL schemes to try in order. Each scheme is a golang
