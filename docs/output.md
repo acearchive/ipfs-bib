@@ -1,7 +1,7 @@
 # JSON Output Format
 
 This document describes the format of the JSON output produced when the
-`--json` flag is passed.
+`--json` flag is passed. This returns a **Response Object**.
 
 ## Response Object
 
@@ -18,7 +18,7 @@ This document describes the format of the JSON output produced when the
 | Key | Type | Description |
 | --- | --- | --- |
 | `citeName` | string | The bibtex cite name for the entry. |
-| `doi` | string \| null | The DOI of the entry, excluding the doi: or https://doi.org/ prefix (e.g. 10.1038/nphys1170). If no DOI was found, this is `null`. |
+| `doi` | string\|null | The DOI of the entry, excluding the doi: or https://doi.org/ prefix (e.g. 10.1038/nphys1170). If no DOI was found, this is `null`. |
 | `mediaType` | string | The media type (MIME type) of the archived source content (e.g. application/pdf). |
 | `fileCid` | string | The CID of the archived source file. |
 | `fileName` | string | The name of the archived source file. |
