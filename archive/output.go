@@ -12,21 +12,21 @@ import (
 const outputIndent = "  "
 
 type ArchivedOutput struct {
-	CiteName      string `json:"citeName"`
-	Doi           string `json:"doi"`
-	MediaType     string `json:"mediaType"`
-	FileCid       string `json:"fileCid"`
-	FileName      string `json:"fileName"`
-	DirectoryCid  string `json:"directoryCid"`
-	DirectoryName string `json:"directoryName"`
-	IpfsUrl       string `json:"ipfsUrl"`
-	GatewayUrl    string `json:"gatewayUrl"`
-	ContentOrigin string `json:"contentOrigin"`
+	CiteName      string  `json:"citeName"`
+	Doi           *string `json:"doi"`
+	MediaType     string  `json:"mediaType"`
+	FileCid       string  `json:"fileCid"`
+	FileName      string  `json:"fileName"`
+	DirectoryCid  string  `json:"directoryCid"`
+	DirectoryName string  `json:"directoryName"`
+	IpfsUrl       string  `json:"ipfsUrl"`
+	GatewayUrl    string  `json:"gatewayUrl"`
+	ContentOrigin string  `json:"contentOrigin"`
 }
 
 type NotArchivedOutput struct {
-	CiteName string `json:"citeName"`
-	Doi      string `json:"doi"`
+	CiteName string  `json:"citeName"`
+	Doi      *string `json:"doi"`
 }
 
 type Output struct {
@@ -38,19 +38,11 @@ type Output struct {
 }
 
 func NewOutput(cfg config.Config, metadata []BibMetadata, location Location) (Output, error) {
-	var (
-		archivedEntries    []ArchivedOutput
-		notArchivedEntries []NotArchivedOutput
-	)
+	archivedEntries := make([]ArchivedOutput, 0, len(metadata))
+	notArchivedEntries := make([]NotArchivedOutput, 0, len(metadata))
 
 	for _, bibMetadata := range metadata {
 		bibLocation, hasLocation := location.Entries[bibMetadata.Entry.CiteName]
-
-		entryDoi := ""
-
-		if bibMetadata.Doi != nil {
-			entryDoi = *bibMetadata.Doi
-		}
 
 		if hasLocation && bibMetadata.Contents != nil {
 			gatewayUrl, err := bibLocation.GatewayUrl(cfg.File.Ipfs.Gateway)
@@ -62,7 +54,7 @@ func NewOutput(cfg config.Config, metadata []BibMetadata, location Location) (Ou
 
 			archivedEntries = append(archivedEntries, ArchivedOutput{
 				CiteName:      bibMetadata.Entry.CiteName,
-				Doi:           entryDoi,
+				Doi:           bibMetadata.Doi,
 				MediaType:     bibMetadata.Contents.MediaType,
 				FileCid:       bibLocation.FileCid.String(),
 				FileName:      bibLocation.FileName,
@@ -75,7 +67,7 @@ func NewOutput(cfg config.Config, metadata []BibMetadata, location Location) (Ou
 		} else {
 			notArchivedEntries = append(notArchivedEntries, NotArchivedOutput{
 				CiteName: bibMetadata.Entry.CiteName,
-				Doi:      entryDoi,
+				Doi:      bibMetadata.Doi,
 			})
 		}
 	}

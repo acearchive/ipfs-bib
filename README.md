@@ -26,7 +26,7 @@ to a [CAR archive](https://ipld.io/specs/transport/car/).
   [monolith](https://github.com/Y2Z/monolith) when a PDF isn't available. This
   requires monolith to be installed separately.
 - Pulls embedded documents from sites that don't serve PDFs directly.
-- Can produce JSON output for hacking and scripting.
+- Can produce JSON output for hacking and scripting. The format of the JSON output is documented [here](./docs/output.md).
 
 ## Configuration
 
