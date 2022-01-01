@@ -4,16 +4,18 @@ ipfs-bib is a tool for hosting bibliographic references on
 [IPFS](https://ipfs.io). The tool pulls citations from a bibtex/biblatex file
 or a public [Zotero](https://zotero.org) library, finds the full text of the
 research on the legacy web, and rehosts it on a local IPFS node or exports it
-to a [CAR archive](ipns://ipld.io/specs/transport/car/).
+to a [CAR archive](https://ipld.io/specs/transport/car/).
 
 ## Features
 
 - Pull citations from a bibtex/biblatex file or a public Zotero library.
 - Host content on a local IPFS node or export it to a CAR archive. You can pin
   content on your local node or add it to
-  [MFS](https://docs.ipfs.io/concepts/file-systems/).
+  [MFS](https://docs.ipfs.io/concepts/file-systems/#mutable-file-system-mfs).
 - Pin content with IPFS [pinning
-  services](https://docs.ipfs.io/how-to/work-with-pinning-services/).
+  services](https://docs.ipfs.io/how-to/work-with-pinning-services/) that
+  support the [pinning service
+  API](https://github.com/ipfs/pinning-services-api-spec).
 - Generate a new biblatex file containing the new URLs of the content on IPFS.
   Both `ipfs://` and gateway URLs are supported.
 - Pulls open-access full-text articles from [Unpaywall](https://unpaywall.org/).
@@ -31,14 +33,15 @@ to a [CAR archive](ipns://ipld.io/specs/transport/car/).
 The behavior of the program can be configured via a config file. See [the
 default config file](./config/config.toml) for documentation and examples.
 
-The tool will produce a single UnixFS directory in IPFS with a subdirectory for
-each source, and each of those subdirectories will contain the full-text
-article. Both the name of the directory and the name of the file can be
-configured in the config file.
+The tool will produce a single
+[UnixFS](https://docs.ipfs.io/concepts/file-systems/#unix-file-system-unixfs)
+directory in IPFS with a subdirectory for each source, and each of those
+subdirectories will contain the full-text article. Both the name of the
+directory and the name of the file can be configured in the config file.
 
-Some fields in the config file accept a [Go `text/template`
+Some fields in the config file accept a [Golang `text/template`
 template](https://pkg.go.dev/text/template). In these templates, functions
-provided by the [Sprig](https://github.com/Masterminds/sprig) library are
+provided by the [Sprig](https://masterminds.github.io/sprig/) library are
 available.
 
 ## Usage
@@ -53,7 +56,7 @@ Usage:
   ipfs-bib [options] <bibtex_file>
 
 Flags:
-      --car string          Rather than add the sources to an IPFS node, export them as a CAR archive.
+      --car string          Rather than add the sources to an IPFS node, export them as a CAR archive at this path.
   -c, --config string       The path of the config file to use. Otherwise, use the default config.
       --dry-run             Download sources, but don't add them to IPFS or export them as a CAR.
   -h, --help                help for ipfs-bib
