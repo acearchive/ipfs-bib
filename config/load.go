@@ -60,7 +60,7 @@ func Load(flagSet *pflag.FlagSet) (Config, error) {
 	flagsCfg := viper.New()
 
 	if err := flagsCfg.BindPFlags(flagSet); err != nil {
-		return Config{}, fmt.Errorf("could not parse CLI flags: %v", err)
+		return Config{}, fmt.Errorf("could not parse CLI flags: %w", err)
 	}
 
 	flags := Flags{}
