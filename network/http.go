@@ -93,13 +93,18 @@ func (c *HttpClient) ResolveRedirect(ctx context.Context, sourceUrl url.URL) (ur
 		return nil
 	}
 
+	// We ignore non-200 status codes because we can always just return the original URL.
 	response, err := c.Request(ctx, http.MethodGet, sourceUrl)
-	if err != nil {
+	statusErr := &HttpStatusError{}
+	if err != nil && !errors.As(err, &statusErr) {
+		c.client.CheckRedirect = nil
 		return url.URL{}, err
 	}
 
-	if err := response.Body.Close(); err != nil {
-		return url.URL{}, err
+	if response != nil {
+		if err := response.Body.Close(); err != nil {
+			return url.URL{}, err
+		}
 	}
 
 	c.client.CheckRedirect = nil
