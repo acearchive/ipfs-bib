@@ -1,13 +1,15 @@
 package store
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"github.com/ipfs/go-cid"
-	ipld "github.com/ipfs/go-ipld-format"
-	dag "github.com/ipfs/go-merkledag"
-	unixfs "github.com/ipfs/go-unixfs/io"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/ipfs/go-cid"
+	chunk "github.com/ipfs/go-ipfs-chunker"
+	ipld "github.com/ipfs/go-ipld-format"
+	"github.com/ipfs/go-unixfs/importer"
+	unixfs "github.com/ipfs/go-unixfs/io"
 )
 
 type dagSourceStore struct {
@@ -35,9 +37,9 @@ func newDagSourceStore(ctx context.Context, service ipld.DAGService) (*dagSource
 }
 
 func (s *dagSourceStore) AddSource(ctx context.Context, source config.BibSource) (config.BibEntryLocation, error) {
-	contentNode := dag.NewRawNode(source.Content)
-	if err := s.service.Add(ctx, contentNode); err != nil {
-		return config.BibEntryLocation{}, fmt.Errorf("%w, %v", ErrIpfs, err)
+	contentNode, err := importer.BuildDagFromReader(s.service, chunk.DefaultSplitter(bytes.NewReader(source.Content)))
+	if err != nil {
+		return config.BibEntryLocation{}, fmt.Errorf("%w: %v", ErrIpfs, err)
 	}
 
 	sourceDirectory := unixfs.NewDirectory(s.service)
