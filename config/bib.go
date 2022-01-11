@@ -3,8 +3,8 @@ package config
 import (
 	"errors"
 	"fmt"
-	"github.com/ipfs/go-cid"
 	"github.com/frawleyskid/ipfs-bib/logging"
+	"github.com/ipfs/go-cid"
 	"github.com/nickng/bibtex"
 	"mime"
 	"net/http"
@@ -165,20 +165,10 @@ func (l *BibEntryLocation) IpfsUrl() url.URL {
 }
 
 func (l *BibEntryLocation) GatewayUrl(gateway string) (url.URL, error) {
-	switch l.FileCid.Version() {
-	case 0:
-		gatewayUrl, err := url.Parse(fmt.Sprintf("https://%s/ipfs/%s/?filename=%s", gateway, l.FileCid.String(), url.QueryEscape(l.FileName)))
-		if err != nil {
-			return url.URL{}, fmt.Errorf("%w: %s", ErrMalformedGateway, gateway)
-		}
-
-		return *gatewayUrl, nil
-	default:
-		gatewayUrl, err := url.Parse(fmt.Sprintf("https://%s.ipfs.%s/?filename=%s", l.FileCid.String(), gateway, url.QueryEscape(l.FileName)))
-		if err != nil {
-			return url.URL{}, fmt.Errorf("%w: %s", ErrMalformedGateway, gateway)
-		}
-
-		return *gatewayUrl, nil
+	gatewayUrl, err := url.Parse(fmt.Sprintf("https://%s/ipfs/%s/?filename=%s", gateway, l.FileCid.String(), url.QueryEscape(l.FileName)))
+	if err != nil {
+		return url.URL{}, fmt.Errorf("%w: %s", ErrMalformedGateway, gateway)
 	}
+
+	return *gatewayUrl, nil
 }
