@@ -87,14 +87,14 @@ func Execute() {
 
 func init() {
 	rootCmd.SetVersionTemplate("ipfs-bib {{ .Version }}\n")
-	rootCmd.Flags().StringP("config", "c", "", "The path of the config file to use. Otherwise, use the default config.")
-	rootCmd.Flags().StringP("output", "o", "", "Generate a new bibtex file at this path with the IPFS URLs added to each entry.")
-	rootCmd.Flags().String("car", "", "Rather than add the sources to an IPFS node, export them as a CAR archive at this path.")
+	rootCmd.Flags().StringP("config", "c", "", "The `path` of the config file to use. Otherwise, use the default config.")
+	rootCmd.Flags().StringP("output", "o", "", "Generate a new bibtex file at this `path` with the IPFS URLs added to each entry.")
+	rootCmd.Flags().String("car", "", "Rather than add the sources to an IPFS node, export them as a CAR archive at this `path`.")
 	rootCmd.Flags().Bool("pin", false, "Pin the source files when adding them to the IPFS node.")
-	rootCmd.Flags().String("pin-remote", "", "Pin the source files using each of the configured IPFS pinning services. Pass a name for the pin.")
+	rootCmd.Flags().String("pin-remote", "", "Pin the source files using each of the configured IPFS pinning services. Pass a `name` for the pin.")
 	rootCmd.Flags().Bool("json", false, "Produce machine-readable JSON output.")
 	rootCmd.Flags().Bool("zotero", false, "Pull references from a public Zotero library. Pass a Zotero group ID.")
 	rootCmd.Flags().BoolP("verbose", "v", false, "Print verbose output.")
 	rootCmd.Flags().Bool("dry-run", false, "Download sources, but don't add them to IPFS or export them as a CAR.")
-	rootCmd.Flags().String("mfs", "", "Add the sources to MFS at this path.")
+	rootCmd.Flags().String("mfs", "", "Add the sources to MFS at this `path`.")
 }
