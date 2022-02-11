@@ -11,7 +11,6 @@ import (
 	"net/url"
 	"path"
 	"regexp"
-	"strings"
 )
 
 const (
@@ -19,19 +18,9 @@ const (
 	contentDispositionHeader = "Content-Disposition"
 )
 
-var doiPrefixes = []string{
-	"doi:",
-	"http://doi.org/",
-	"https://doi.org/",
-	"doi.org/",
-	"http://dx.doi.org/",
-	"https://dx.doi.org/",
-	"dx.doi.org/",
-}
+const doiRegexMatchGroup = 4
 
-const doiUrlRegexMatchGroup = 3
-
-var doiUrlRegex = regexp.MustCompile(`^(https?://)?(dx\.)?doi\.org/(10\.[0-9]{4,}(\.[0-9]+)*/\S+)$`)
+var doiRegex = regexp.MustCompile(`^(doi:|(https?://)?(dx\.)?doi\.org/)?(10\.[0-9]{4,}(\.[0-9]+)*/\S+)$`)
 
 var (
 	ErrCouldNotLocateEntry = errors.New("bibtex entry has no URL or DOI")
@@ -103,21 +92,9 @@ func LocateEntry(entry bibtex.BibEntry) (SourceLocator, error) {
 	)
 
 	if rawDoi := BibEntryField(entry, "doi"); rawDoi != nil {
-		doi := *rawDoi
-
-		for _, doiPrefix := range doiPrefixes {
-			if strings.HasPrefix(*rawDoi, doiPrefix) {
-				doi = strings.TrimPrefix(*rawDoi, doiPrefix)
-				break
-			}
+		if matches := doiRegex.FindStringSubmatch(*rawDoi); matches != nil {
+			sourceDoi = &matches[doiRegexMatchGroup]
 		}
-
-		sourceUrl, err = url.Parse(canonicalDoiUrlPrefix + url.PathEscape(doi))
-		if err != nil {
-			logging.Error.Fatal(err)
-		}
-
-		sourceDoi = &doi
 	}
 
 	if rawUrl := BibEntryField(entry, "url"); rawUrl != nil {
@@ -129,9 +106,16 @@ func LocateEntry(entry bibtex.BibEntry) (SourceLocator, error) {
 
 		if sourceUrl != nil && sourceDoi == nil {
 			// Attempt to extract the DOI from the URL.
-			if matches := doiUrlRegex.FindStringSubmatch(*rawUrl); matches != nil {
-				sourceDoi = &matches[doiUrlRegexMatchGroup]
+			if matches := doiRegex.FindStringSubmatch(*rawUrl); matches != nil {
+				sourceDoi = &matches[doiRegexMatchGroup]
 			}
+		}
+	}
+
+	if sourceUrl == nil && sourceDoi != nil {
+		sourceUrl, err = url.Parse(canonicalDoiUrlPrefix + url.PathEscape(*sourceDoi))
+		if err != nil {
+			logging.Error.Fatal(err)
 		}
 	}
 
