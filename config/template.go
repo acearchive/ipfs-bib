@@ -55,9 +55,12 @@ func (s SourcePathTemplate) Execute(entry bibtex.BibEntry, originalFileName stri
 		logging.Error.Fatal(err)
 	}
 
+	sanitizedFileName := strings.ReplaceAll(filenameBytes.String(), "/", "-")
+	sanitizedDirectoryName := strings.ReplaceAll(directoryBytes.String(), "/", "-")
+
 	return SourcePath{
-		FileName:      filenameBytes.String(),
-		DirectoryName: directoryBytes.String(),
+		FileName:      sanitizedFileName,
+		DirectoryName: sanitizedDirectoryName,
 	}
 }
 
