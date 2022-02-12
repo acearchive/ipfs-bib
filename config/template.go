@@ -22,8 +22,9 @@ type SourcePath struct {
 }
 
 type SourcePathTemplate struct {
-	filename  template.Template
-	directory template.Template
+	filename        template.Template
+	directory       template.Template
+	occurrenceCount map[string]int
 }
 
 func NewSourcePathTemplate(cfg Config) (SourcePathTemplate, error) {
@@ -37,7 +38,11 @@ func NewSourcePathTemplate(cfg Config) (SourcePathTemplate, error) {
 		return SourcePathTemplate{}, fmt.Errorf("%w: %v", ErrInvalidTemplate, err)
 	}
 
-	return SourcePathTemplate{filename: *filename, directory: *directory}, nil
+	return SourcePathTemplate{
+		filename:        *filename,
+		directory:       *directory,
+		occurrenceCount: make(map[string]int),
+	}, nil
 }
 
 func (s SourcePathTemplate) Execute(entry bibtex.BibEntry, originalFileName string, mediaType string) SourcePath {
@@ -45,7 +50,7 @@ func (s SourcePathTemplate) Execute(entry bibtex.BibEntry, originalFileName stri
 	var directoryBytes bytes.Buffer
 
 	filenameInput := newFileNameTemplateInput(entry, originalFileName, mediaType)
-	directoryInput := newDirectoryNameTemplateInput(entry)
+	directoryInput := newDirectoryNameTemplateInput(entry, 0)
 
 	if err := s.filename.Execute(&filenameBytes, filenameInput); err != nil {
 		logging.Error.Fatal(err)
@@ -53,6 +58,20 @@ func (s SourcePathTemplate) Execute(entry bibtex.BibEntry, originalFileName stri
 
 	if err := s.directory.Execute(&directoryBytes, directoryInput); err != nil {
 		logging.Error.Fatal(err)
+	}
+
+	// We execute the directory template with an ordinal value of `0` first, so
+	// we can determine whether it has been duplicated or not.
+	ordinal := s.occurrenceCount[directoryBytes.String()]
+	s.occurrenceCount[directoryBytes.String()] = ordinal + 1
+
+	if ordinal > 0 {
+		directoryInput.Ordinal = ordinal
+		directoryBytes.Reset()
+
+		if err := s.directory.Execute(&directoryBytes, directoryInput); err != nil {
+			logging.Error.Fatal(err)
+		}
 	}
 
 	sanitizedFileName := strings.ReplaceAll(filenameBytes.String(), "/", "-")
@@ -110,13 +129,15 @@ type directoryNameTemplateInput struct {
 	CiteName string
 	Type     string
 	Fields   map[string]interface{}
+	Ordinal  int
 }
 
-func newDirectoryNameTemplateInput(entry bibtex.BibEntry) directoryNameTemplateInput {
+func newDirectoryNameTemplateInput(entry bibtex.BibEntry, ordinal int) directoryNameTemplateInput {
 	input := directoryNameTemplateInput{
 		CiteName: entry.CiteName,
 		Type:     entry.Type,
 		Fields:   make(map[string]interface{}),
+		Ordinal:  ordinal,
 	}
 
 	for key, value := range entry.Fields {

@@ -36,6 +36,7 @@
     # .CiteName - The bibtex entry cite name (e.g. aspelmeyer_measured_2009)
     # .Type - The bibtex entry type (e.g. article)
     # .Fields - A map of fields that appear in the bibtex entry
+    # .Ordinal - A unique integer for cases where two directories have the same name. This is 0 for the first occurrence, 1 for the second, etc.
     directory-name = "{{ .CiteName }}"
 
     # If the source URL points to a web page, the tool can search for embedded
