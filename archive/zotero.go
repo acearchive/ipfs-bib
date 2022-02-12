@@ -45,8 +45,14 @@ type ZoteroAttachment struct {
 	FileName  string
 }
 
-func (a ZoteroAttachment) IsPreferred() bool {
-	return IsPreferredMediaType(a.MediaType)
+func (a ZoteroAttachment) MediaTypeIsOneOf(mediaTypes []string) bool {
+	for _, expectedMediaType := range mediaTypes {
+		if a.MediaType == expectedMediaType {
+			return true
+		}
+	}
+
+	return false
 }
 
 type ZoteroKey = string
@@ -339,7 +345,7 @@ citeMap:
 		}
 
 		for _, attachment := range citation.Attachments {
-			if attachment.IsPreferred() {
+			if attachment.MediaTypeIsOneOf(cfg.File.Zotero.AttachmentTypes) {
 				contents, err := zoteroClient.DownloadAttachment(ctx, groupId, attachment)
 				if err == nil {
 					bibContent.Contents = &contents
@@ -353,17 +359,6 @@ citeMap:
 
 		if sourceLocator != nil {
 			contents, err := downloadClient.Download(ctx, *sourceLocator, downloadHandler, sourceResolver)
-			if err == nil {
-				bibContent.Contents = &contents
-				downloadResults <- DownloadResult{Contents: bibContent}
-				continue
-			} else if !errors.Is(err, ErrNoSource) {
-				logging.Verbose.Println(err)
-			}
-		}
-
-		if len(citation.Attachments) > 0 {
-			contents, err := zoteroClient.DownloadAttachment(ctx, groupId, citation.Attachments[0])
 			if err == nil {
 				bibContent.Contents = &contents
 				downloadResults <- DownloadResult{Contents: bibContent}

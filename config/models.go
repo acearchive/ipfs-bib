@@ -44,6 +44,10 @@ type Archive struct {
 	UserAgent     string   `mapstructure:"user-agent"`
 }
 
+type Zotero struct {
+	AttachmentTypes []string `mapstructure:"attachment-types"`
+}
+
 type Unpaywall struct {
 	Enabled bool   `mapstructure:"enabled"`
 	Email   string `mapstructure:"email"`
@@ -77,6 +81,7 @@ type Resolver struct {
 type File struct {
 	Ipfs      Ipfs       `mapstructure:"ipfs"`
 	Archive   Archive    `mapstructure:"archive"`
+	Zotero    Zotero     `mapstructure:"zotero"`
 	Unpaywall Unpaywall  `mapstructure:"unpaywall"`
 	Snapshot  Snapshot   `mapstructure:"snapshot"`
 	Pins      []Pin      `mapstructure:"pins"`
