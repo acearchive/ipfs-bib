@@ -6,14 +6,13 @@ import (
 	"fmt"
 	"github.com/Masterminds/sprig/v3"
 	"github.com/frawleyskid/ipfs-bib/logging"
+	"github.com/frawleyskid/ipfs-bib/network"
 	"github.com/nickng/bibtex"
 	"mime"
 	"path"
 	"strings"
 	"text/template"
 )
-
-const DefaultMediaType = "application/octet-stream"
 
 var ErrInvalidTemplate = errors.New("malformed config template")
 
@@ -73,7 +72,7 @@ type fileNameTemplateInput struct {
 func newFileNameTemplateInput(entry bibtex.BibEntry, originalFileName string, mediaType string) fileNameTemplateInput {
 	mediaType, _, err := mime.ParseMediaType(mediaType)
 	if err != nil {
-		mediaType = DefaultMediaType
+		mediaType = network.DefaultMediaType
 	}
 
 	extensions, err := mime.ExtensionsByType(mediaType)

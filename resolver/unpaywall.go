@@ -71,5 +71,10 @@ func (u *UnpaywallResolver) Resolve(ctx context.Context, locator config.SourceLo
 		return ResolvedLocator{}, fmt.Errorf("%w: %v", network.ErrUnmarshalResponse, err)
 	}
 
-	return ResolvedLocator{Url: *resolvedUrl, Origin: ContentOriginUnpaywall, MediaTypeHint: &unpaywallMediaTypeHint}, nil
+	return ResolvedLocator{
+		ResolvedUrl:   *resolvedUrl,
+		OriginalUrl:   locator.Url,
+		Origin:        ContentOriginUnpaywall,
+		MediaTypeHint: &unpaywallMediaTypeHint,
+	}, nil
 }

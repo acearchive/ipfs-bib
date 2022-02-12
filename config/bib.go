@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/frawleyskid/ipfs-bib/logging"
+	"github.com/frawleyskid/ipfs-bib/network"
 	"github.com/ipfs/go-cid"
 	"github.com/nickng/bibtex"
 	"mime"
@@ -14,8 +15,7 @@ import (
 )
 
 const (
-	canonicalDoiUrlPrefix    = "https://doi.org/"
-	contentDispositionHeader = "Content-Disposition"
+	canonicalDoiUrlPrefix = "https://doi.org/"
 )
 
 const doiRegexMatchGroup = 4
@@ -46,7 +46,7 @@ func fileNameFromUrl(sourceUrl *url.URL, mediaType string) *string {
 }
 
 func fileNameFromContentDisposition(header http.Header) *string {
-	_, params, err := mime.ParseMediaType(header.Get(contentDispositionHeader))
+	_, params, err := mime.ParseMediaType(header.Get(network.ContentDispositionHeader))
 	if err != nil {
 		return nil
 	}

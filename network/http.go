@@ -13,8 +13,11 @@ import (
 )
 
 const (
-	DefaultTimeout  time.Duration = 1000 * 1000 * 1000 * 15
-	UserAgentHeader string        = "User-Agent"
+	DefaultTimeout           time.Duration = 1000 * 1000 * 1000 * 15
+	UserAgentHeader          string        = "User-Agent"
+	ContentTypeHeader                      = "Content-Type"
+	ContentDispositionHeader               = "Content-Disposition"
+	DefaultMediaType                       = "application/octet-stream"
 )
 
 var defaultClient http.Client

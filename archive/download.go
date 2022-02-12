@@ -11,6 +11,7 @@ import (
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
 	"io"
+	"mime"
 	"net/http"
 )
 
@@ -39,6 +40,59 @@ func NewDownloadClient(httpClient *network.HttpClient) *DownloadClient {
 	return &DownloadClient{httpClient}
 }
 
+func isWebPage(response *http.Response) bool {
+	mediaType, _, err := mime.ParseMediaType(response.Header.Get(network.ContentTypeHeader))
+	if err != nil {
+		return false
+	}
+
+	return mediaType == "text/html"
+}
+
+func (c DownloadClient) responseFromLocator(ctx context.Context, locator resolver.ResolvedLocator) (handler.DownloadResponse, error) {
+	resolvedResponse, err := c.httpClient.Request(ctx, http.MethodGet, locator.ResolvedUrl)
+	if err != nil {
+		return handler.DownloadResponse{}, err
+	}
+
+	preferredResponse := resolvedResponse
+	preferredUrl := locator.ResolvedUrl
+	mediaTypeHint := locator.MediaTypeHint
+
+	// We should prefer PDFs or other files over web pages. We should also
+	// prefer the resolved URL to the original URL. If the resolved URL is a
+	// web page and the original URL is not, then we should use the original
+	// URL. Otherwise, we should use the resolved URL.
+	if isWebPage(resolvedResponse) {
+		originalResponse, err := c.httpClient.Request(ctx, http.MethodGet, locator.OriginalUrl)
+		if err != nil {
+			return handler.DownloadResponse{}, err
+		}
+
+		if !isWebPage(originalResponse) {
+			preferredResponse = originalResponse
+			preferredUrl = locator.OriginalUrl
+			mediaTypeHint = nil
+		}
+	}
+
+	responseBody, err := io.ReadAll(preferredResponse.Body)
+	if err != nil {
+		return handler.DownloadResponse{}, err
+	}
+
+	if err := preferredResponse.Body.Close(); err != nil {
+		return handler.DownloadResponse{}, err
+	}
+
+	return handler.DownloadResponse{
+		Url:           preferredUrl,
+		Header:        preferredResponse.Header,
+		Body:          responseBody,
+		MediaTypeHint: mediaTypeHint,
+	}, nil
+}
+
 func (c DownloadClient) Download(ctx context.Context, locator config.SourceLocator, downloadHandler handler.DownloadHandler, sourceResolver resolver.SourceResolver) (DownloadedContent, error) {
 	redirectedUrl, err := c.httpClient.ResolveRedirect(ctx, locator.Url)
 	if err != nil {
@@ -57,25 +111,9 @@ func (c DownloadClient) Download(ctx context.Context, locator config.SourceLocat
 		return DownloadedContent{}, err
 	}
 
-	response, err := c.httpClient.Request(ctx, http.MethodGet, resolvedLocator.Url)
+	downloadResponse, err := c.responseFromLocator(ctx, resolvedLocator)
 	if err != nil {
 		return DownloadedContent{}, err
-	}
-
-	responseBody, err := io.ReadAll(response.Body)
-	if err != nil {
-		return DownloadedContent{}, err
-	}
-
-	if err := response.Body.Close(); err != nil {
-		return DownloadedContent{}, err
-	}
-
-	downloadResponse := handler.DownloadResponse{
-		Url:           resolvedLocator.Url,
-		Header:        response.Header,
-		Body:          responseBody,
-		MediaTypeHint: resolvedLocator.MediaTypeHint,
 	}
 
 	sourceContent, err := downloadHandler.Handle(ctx, downloadResponse)

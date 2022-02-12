@@ -4,12 +4,11 @@ import (
 	"context"
 	"errors"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/frawleyskid/ipfs-bib/network"
 	"mime"
 	"net/http"
 	"net/url"
 )
-
-const ContentTypeHeader = "Content-Type"
 
 var ErrNotHandled = errors.New("handler could not handle content")
 
@@ -27,13 +26,13 @@ type DownloadResponse struct {
 }
 
 func (r DownloadResponse) MediaType() string {
-	mediaType, _, err := mime.ParseMediaType(r.Header.Get(ContentTypeHeader))
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get(network.ContentTypeHeader))
 	switch {
 	case err != nil && r.MediaTypeHint != nil:
 		return *r.MediaTypeHint
 	case err != nil:
-		return config.DefaultMediaType
-	case mediaType == config.DefaultMediaType && r.MediaTypeHint != nil:
+		return network.DefaultMediaType
+	case mediaType == network.DefaultMediaType && r.MediaTypeHint != nil:
 		return *r.MediaTypeHint
 	}
 
