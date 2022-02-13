@@ -11,7 +11,6 @@ import (
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
 	"io"
-	"mime"
 	"net/http"
 )
 
@@ -40,15 +39,6 @@ func NewDownloadClient(httpClient *network.HttpClient) *DownloadClient {
 	return &DownloadClient{httpClient}
 }
 
-func isWebPage(response *http.Response) bool {
-	mediaType, _, err := mime.ParseMediaType(response.Header.Get(network.ContentTypeHeader))
-	if err != nil {
-		return false
-	}
-
-	return mediaType == "text/html"
-}
-
 func (c DownloadClient) responseFromLocator(ctx context.Context, locator resolver.ResolvedLocator) (handler.DownloadResponse, error) {
 	resolvedResponse, err := c.httpClient.Request(ctx, http.MethodGet, locator.ResolvedUrl)
 	if err != nil {
@@ -63,13 +53,13 @@ func (c DownloadClient) responseFromLocator(ctx context.Context, locator resolve
 	// prefer the resolved URL to the original URL. If the resolved URL is a
 	// web page and the original URL is not, then we should use the original
 	// URL. Otherwise, we should use the resolved URL.
-	if isWebPage(resolvedResponse) {
+	if network.IsWebPage(resolvedResponse) {
 		originalResponse, err := c.httpClient.Request(ctx, http.MethodGet, locator.OriginalUrl)
 		if err != nil {
 			return handler.DownloadResponse{}, err
 		}
 
-		if !isWebPage(originalResponse) {
+		if !network.IsWebPage(originalResponse) {
 			preferredResponse = originalResponse
 			preferredUrl = locator.OriginalUrl
 			mediaTypeHint = nil
@@ -162,7 +152,7 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex, downl
 			bibContent.Doi = locator.Doi
 		}
 
-		contents, err := ReadLocalBibSource(*bibEntry, true)
+		contents, err := ReadLocalBibSource(*bibEntry, false)
 		if err == nil {
 			bibContent.Contents = &contents
 			downloadResults <- DownloadResult{Contents: bibContent}
@@ -182,13 +172,15 @@ func FromBibtex(ctx context.Context, cfg config.Config, bib bibtex.BibTex, downl
 			}
 		}
 
-		contents, err = ReadLocalBibSource(*bibEntry, false)
-		if err == nil {
-			bibContent.Contents = &contents
-			downloadResults <- DownloadResult{Contents: bibContent}
-			continue
-		} else if !errors.Is(err, ErrNoSource) {
-			logging.Verbose.Println(err)
+		if cfg.File.Snapshot.LocalFile {
+			contents, err = ReadLocalBibSource(*bibEntry, true)
+			if err == nil {
+				bibContent.Contents = &contents
+				downloadResults <- DownloadResult{Contents: bibContent}
+				continue
+			} else if !errors.Is(err, ErrNoSource) {
+				logging.Verbose.Println(err)
+			}
 		}
 
 		downloadResults <- DownloadResult{Contents: bibContent}

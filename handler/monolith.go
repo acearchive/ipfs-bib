@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/frawleyskid/ipfs-bib/config"
+	"github.com/frawleyskid/ipfs-bib/network"
 	"os/exec"
 )
 
@@ -17,46 +18,46 @@ type MonolithHandler struct {
 }
 
 func NewMonolithHandler(cfg config.Config) DownloadHandler {
-	if !cfg.File.Snapshot.Enabled {
+	if !cfg.File.Monolith.Enabled {
 		return &NoOpHandler{}
 	}
 
 	args := []string{"--user-agent", cfg.File.Archive.UserAgent}
 
 	switch {
-	case cfg.File.Snapshot.AllowInsecure:
+	case cfg.File.Monolith.AllowInsecure:
 		args = append(args, "--insecure")
 		fallthrough
-	case !cfg.File.Snapshot.IncludeAudio:
+	case !cfg.File.Monolith.IncludeAudio:
 		args = append(args, "--no-audio")
 		fallthrough
-	case !cfg.File.Snapshot.IncludeCss:
+	case !cfg.File.Monolith.IncludeCss:
 		args = append(args, "--no-css")
 		fallthrough
-	case !cfg.File.Snapshot.IncludeFonts:
+	case !cfg.File.Monolith.IncludeFonts:
 		args = append(args, "--no-fonts")
 		fallthrough
-	case !cfg.File.Snapshot.IncludeFrames:
+	case !cfg.File.Monolith.IncludeFrames:
 		args = append(args, "--no-frames")
 		fallthrough
-	case !cfg.File.Snapshot.IncludeImages:
+	case !cfg.File.Monolith.IncludeImages:
 		args = append(args, "--no-images")
 		fallthrough
-	case !cfg.File.Snapshot.IncludeJs:
+	case !cfg.File.Monolith.IncludeJs:
 		args = append(args, "--no-js")
 		fallthrough
-	case !cfg.File.Snapshot.IncludeVideo:
+	case !cfg.File.Monolith.IncludeVideo:
 		args = append(args, "--no-video")
 		fallthrough
-	case !cfg.File.Snapshot.IncludeMetadata:
+	case !cfg.File.Monolith.IncludeMetadata:
 		args = append(args, "--no-metadata")
 	}
 
-	return &MonolithHandler{path: cfg.File.Snapshot.Path, args: args}
+	return &MonolithHandler{path: cfg.File.Monolith.Path, args: args}
 }
 
 func (s *MonolithHandler) Handle(_ context.Context, response DownloadResponse) (SourceContent, error) {
-	if response.MediaType() != "text/html" {
+	if response.MediaType() != network.HtmlMediaType {
 		return SourceContent{}, ErrNotHandled
 	}
 

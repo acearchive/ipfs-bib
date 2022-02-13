@@ -72,16 +72,9 @@ func (n *NoOpHandler) Handle(_ context.Context, _ DownloadResponse) (SourceConte
 }
 
 func FromConfig(cfg config.Config) DownloadHandler {
-	var excludeTypes []string
-
-	if !cfg.File.Snapshot.Enabled {
-		// If taking snapshots is disabled, don't attempt to download HTML documents.
-		excludeTypes = []string{"text/html"}
-	}
-
 	return MultiHandler{
 		NewEmbeddedHandler(cfg.File.Archive.UserAgent, cfg.File.Archive.EmbeddedTypes),
 		NewMonolithHandler(cfg),
-		NewDirectHandler(excludeTypes),
+		NewDirectHandler([]string{network.HtmlMediaType}),
 	}
 }

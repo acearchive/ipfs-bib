@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -18,6 +19,7 @@ const (
 	ContentTypeHeader                      = "Content-Type"
 	ContentDispositionHeader               = "Content-Disposition"
 	DefaultMediaType                       = "application/octet-stream"
+	HtmlMediaType                          = "text/html"
 )
 
 var defaultClient http.Client
@@ -37,6 +39,15 @@ func init() {
 		Timeout: DefaultTimeout,
 		Jar:     jar,
 	}
+}
+
+func IsWebPage(response *http.Response) bool {
+	mediaType, _, err := mime.ParseMediaType(response.Header.Get(ContentTypeHeader))
+	if err != nil {
+		return false
+	}
+
+	return mediaType == HtmlMediaType
 }
 
 func responseIsOk(status int) bool {

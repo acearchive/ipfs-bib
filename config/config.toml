@@ -50,13 +50,6 @@
     # The user agent to use when downloading content from the legacy web.
     user-agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36"
 
-[zotero]
-    # Only download attachments from Zotero libraries if they have one of these
-    # media types (MIME types).
-    attachment-types = [
-        "application/pdf",
-    ]
-
 # Find open access content on Unpaywall.
 [unpaywall]
     # Enable searching for open access content on Unpaywall.
@@ -67,7 +60,7 @@
     email = "unpaywall@impactstory.org"
 
 # Take snapshots of web pages using monolith.
-[snapshot]
+[monolith]
     # Enable taking snapshots of web pages using monolith.
     enabled = true
 
@@ -100,6 +93,14 @@
 
     # Include timestamp and source information.
     include-metadata = true
+
+[snapshot]
+    # Include web snapshots when pulling attachments from a Zotero library.
+    zotero-attachment = true
+
+    # Include web snapshots when getting local files referenced in a Bibtex
+    # file.
+    local-file = true
 
 # IPFS pinning services to archive sources to.
 #[[pins]]

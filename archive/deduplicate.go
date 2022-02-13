@@ -1,5 +1,7 @@
 package archive
 
+import "github.com/frawleyskid/ipfs-bib/network"
+
 type bibMetadataPredicate = func(BibMetadata) bool
 
 func bibMetadataHasContent(content BibMetadata) bool {
@@ -7,7 +9,7 @@ func bibMetadataHasContent(content BibMetadata) bool {
 }
 
 func bibMetadataHasPreferredMediaType(content BibMetadata) bool {
-	return content.Contents != nil && IsPreferredMediaType(content.Contents.MediaType)
+	return content.Contents != nil && content.Contents.MediaType != network.HtmlMediaType
 }
 
 func bibMetadataHasDoi(content BibMetadata) bool {

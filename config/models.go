@@ -44,16 +44,12 @@ type Archive struct {
 	UserAgent     string   `mapstructure:"user-agent"`
 }
 
-type Zotero struct {
-	AttachmentTypes []string `mapstructure:"attachment-types"`
-}
-
 type Unpaywall struct {
 	Enabled bool   `mapstructure:"enabled"`
 	Email   string `mapstructure:"email"`
 }
 
-type Snapshot struct {
+type Monolith struct {
 	Enabled         bool   `mapstructure:"enabled"`
 	Path            string `mapstructure:"path"`
 	AllowInsecure   bool   `mapstructure:"allow-insecure"`
@@ -65,6 +61,11 @@ type Snapshot struct {
 	IncludeJs       bool   `mapstructure:"include-js"`
 	IncludeVideo    bool   `mapstructure:"include-video"`
 	IncludeMetadata bool   `mapstructure:"include-metadata"`
+}
+
+type Snapshot struct {
+	ZoteroAttachment bool `mapstructure:"zotero-attachment"`
+	LocalFile        bool `mapstructure:"local-file"`
 }
 
 type Pin struct {
@@ -81,8 +82,8 @@ type Resolver struct {
 type File struct {
 	Ipfs      Ipfs       `mapstructure:"ipfs"`
 	Archive   Archive    `mapstructure:"archive"`
-	Zotero    Zotero     `mapstructure:"zotero"`
 	Unpaywall Unpaywall  `mapstructure:"unpaywall"`
+	Monolith  Monolith   `mapstructure:"monolith"`
 	Snapshot  Snapshot   `mapstructure:"snapshot"`
 	Pins      []Pin      `mapstructure:"pins"`
 	Resolvers []Resolver `mapstructure:"resolvers"`

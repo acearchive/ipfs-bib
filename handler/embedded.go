@@ -47,7 +47,7 @@ func NewEmbeddedHandler(userAgent string, mediaTypes []string) DownloadHandler {
 }
 
 func (e *EmbeddedHandler) Handle(ctx context.Context, response DownloadResponse) (SourceContent, error) {
-	if response.MediaType() != "text/html" {
+	if response.MediaType() != network.HtmlMediaType {
 		return SourceContent{}, ErrNotHandled
 	}
 

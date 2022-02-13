@@ -45,14 +45,8 @@ type ZoteroAttachment struct {
 	FileName  string
 }
 
-func (a ZoteroAttachment) MediaTypeIsOneOf(mediaTypes []string) bool {
-	for _, expectedMediaType := range mediaTypes {
-		if a.MediaType == expectedMediaType {
-			return true
-		}
-	}
-
-	return false
+func (a ZoteroAttachment) IsWebPage() bool {
+	return a.MediaType == network.HtmlMediaType
 }
 
 type ZoteroKey = string
@@ -344,8 +338,14 @@ citeMap:
 			bibContent.Doi = locator.Doi
 		}
 
-		for _, attachment := range citation.Attachments {
-			if attachment.MediaTypeIsOneOf(cfg.File.Zotero.AttachmentTypes) {
+		var firstWebSnapshotAttachment *ZoteroAttachment
+
+		for i, attachment := range citation.Attachments {
+			if attachment.IsWebPage() {
+				if firstWebSnapshotAttachment == nil {
+					firstWebSnapshotAttachment = &citation.Attachments[i]
+				}
+			} else {
 				contents, err := zoteroClient.DownloadAttachment(ctx, groupId, attachment)
 				if err == nil {
 					bibContent.Contents = &contents
@@ -363,6 +363,17 @@ citeMap:
 				bibContent.Contents = &contents
 				downloadResults <- DownloadResult{Contents: bibContent}
 				continue
+			} else if !errors.Is(err, ErrNoSource) {
+				logging.Verbose.Println(err)
+			}
+		}
+
+		if cfg.File.Snapshot.ZoteroAttachment && firstWebSnapshotAttachment != nil {
+			contents, err := zoteroClient.DownloadAttachment(ctx, groupId, *firstWebSnapshotAttachment)
+			if err == nil {
+				bibContent.Contents = &contents
+				downloadResults <- DownloadResult{Contents: bibContent}
+				continue citeMap
 			} else if !errors.Is(err, ErrNoSource) {
 				logging.Verbose.Println(err)
 			}

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/frawleyskid/ipfs-bib/config"
 	"github.com/frawleyskid/ipfs-bib/logging"
+	"github.com/frawleyskid/ipfs-bib/network"
 	"github.com/frawleyskid/ipfs-bib/resolver"
 	"github.com/nickng/bibtex"
 	"io"
@@ -26,18 +27,6 @@ const ContentOriginLocal resolver.ContentOrigin = "local"
 const stdinFileName = "-"
 
 var ErrParseBibtex = errors.New("error parsing bibtex")
-
-var preferredMediaTypes = []string{"application/pdf"}
-
-func IsPreferredMediaType(mediaType string) bool {
-	for _, preferredMediaType := range preferredMediaTypes {
-		if mediaType == preferredMediaType {
-			return true
-		}
-	}
-
-	return false
-}
 
 func ParseBibtex(bibPath string) (bibtex.BibTex, error) {
 	var (
@@ -66,7 +55,7 @@ func ParseBibtex(bibPath string) (bibtex.BibTex, error) {
 	return *bib, nil
 }
 
-func ReadLocalBibSource(entry bibtex.BibEntry, preferredOnly bool) (DownloadedContent, error) {
+func ReadLocalBibSource(entry bibtex.BibEntry, includeSnapshots bool) (DownloadedContent, error) {
 	rawField := config.BibEntryField(entry, "file")
 	if rawField == nil {
 		return DownloadedContent{}, ErrNoSource
@@ -82,7 +71,7 @@ func ReadLocalBibSource(entry bibtex.BibEntry, preferredOnly bool) (DownloadedCo
 
 		bibFilePath, bibMediaType := rawFileFields[1], rawFileFields[2]
 
-		if preferredOnly && !IsPreferredMediaType(bibMediaType) {
+		if bibMediaType == network.HtmlMediaType && !includeSnapshots {
 			continue
 		}
 
