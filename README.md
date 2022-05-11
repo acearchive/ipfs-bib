@@ -46,6 +46,14 @@ available.
 
 ## Usage
 
+To use the CLI, you must first install [Go](https://go.dev/).
+
+To run the CLI and see the help:
+
+```
+go run . --help
+```
+
 ```
 A tool for hosting bibliographic references on IPFS.
 
