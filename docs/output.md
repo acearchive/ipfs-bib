@@ -18,8 +18,8 @@ This document describes the format of the JSON output produced when the
 | Key | Type | Description |
 | --- | --- | --- |
 | `citeName` | string | The bibtex cite name for the entry. |
-| `doi` | string\|null | The DOI of the entry, excluding the doi: or https://doi.org/ prefix (e.g. 10.1038/nphys1170). If no DOI was found, this is `null`. |
-| `mediaType` | string | The media type (MIME type) of the archived source content (e.g. application/pdf). |
+| `doi` | string \| null | The DOI of the entry, excluding the `doi:` or `https://doi.org/` prefix (e.g. `10.1038/nphys1170`). If no DOI was found, this is `null`. |
+| `mediaType` | string | The media type (MIME type) of the archived source content (e.g. `application/pdf`). |
 | `fileCid` | string | The CID of the archived source file. |
 | `fileName` | string | The name of the archived source file. |
 | `directoryCid` | string | The CID of the directory containing the archived source file. |
@@ -33,13 +33,13 @@ This document describes the format of the JSON output produced when the
 | Key | Type | Description |
 | --- | --- | --- |
 | `citeName` | string | The bibtex cite name for the entry. |
-| `doi` | string\|null | The DOI of the entry, excluding the doi: or https://doi.org/ prefix (e.g. 10.1038/nphys1170). If no DOI was found, this is `null`. |
+| `doi` | string \| null | The DOI of the entry, excluding the `doi:` or `https://doi.org/` prefix (e.g. `10.1038/nphys1170`). If no DOI was found, this is `null`. |
 
 ## Content Origin Enum
 
 | Value | Description |
 | --- | --- |
-| `url` | The source content was located by following the URL or DOI (via https://doi.org) in the bibtex/Zotero citation. |
+| `url` | The source content was located by following the URL or DOI (via `https://doi.org`) in the bibtex/Zotero citation. |
 | `local` | The source content was a local file referenced in the bibtex file via a `file` field. |
 | `zotero` | The source content was a Zotero attachment pulled from the public Zotero library. |
 | `unpaywall` | The source content was pulled from Unpaywall. |

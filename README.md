@@ -20,8 +20,9 @@ to a [CAR archive](https://ipld.io/specs/transport/car/).
   Both `ipfs://` and gateway URLs are supported.
 - Pulls open-access full-text articles from [Unpaywall](https://unpaywall.org/).
 - Configure custom link resolvers for accessing full-text articles through your
-  educational institution or any service that provides open access to research.
-- Can access local full-text articles downloaded by your reference manager.
+  educational institution or any service that removes barriers in the way of
+  science.
+- Can access local full-text articles downloaded by Zotero.
 - Can take snapshots of web pages using
   [monolith](https://github.com/Y2Z/monolith) when a PDF isn't available. This
   requires monolith to be installed separately.
