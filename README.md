@@ -1,3 +1,8 @@
+⚠ **UNMAINTAINED**
+
+*Since it is no longer being used for Ace Archive, I am not planning on
+maintaining this tool.*
+
 # ipfs-bib
 
 ipfs-bib is a tool for hosting bibliographic references on
